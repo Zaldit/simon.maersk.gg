@@ -1,15 +1,17 @@
 ---
 /**
- * Experiment scatter (viewBox 0 0 760 410): speed 118–150 bpm on x, the 12
- * minor keys in Camelot order on y (in plain words), r 5 ink dots at .82, and
- * an accent ellipse around the cluster.
+ * Experiment key × tempo chart (viewBox 0 0 760 410), drawn as a halftone
+ * grid: tracks are counted per 5 bpm column (115–165, centred on each tick) and
+ * per Camelot key number, labelled 1A/B–12A/B (major keys share the row of
+ * their relative minor). Each cell with tracks gets
+ * one ink dot whose area is its count, the fullest cell at r 12. An accent box
+ * marks the cluster. Tracks outside the speed range are left off.
  *
- * Dots drop in once on first view and show their track on hover
- * (src/scripts/scatter.ts). Without JS or with reduced motion the chart is
- * simply complete.
+ * Dots drop in once on first view, left to right (all within ~2s), and show
+ * their count on hover (src/scripts/scatter.ts). Without JS or with reduced
+ * motion the chart is simply complete.
  */
-import { rng } from '../../lib/series';
-import { MINOR_KEYS, camelotIndex } from '../../lib/music';
+import { camelotIndex } from '../../lib/music';
 
 export interface ScatterPoint {
   bpm: number;
@@ -35,43 +37,57 @@ interface Props {
 
 const { points, highlight, summary, class: className } = Astro.props;
 
-
-
 const keyIndex = camelotIndex;
-const KEY_NAMES = MINOR_KEYS;
+/** Row labels: '1A/B' … '12A/B'. */
+const KEY_NAMES = Array.from({ length: 12 }, (_, i) => `${i + 1}A/B`);
 
-const ex = (t: number) => 110 + ((t - 118) / 32) * 630;
+const BPM_MIN = 115;
+const BPM_MAX = 165;
+const BIN = 5;
+const ex = (t: number) => 110 + ((t - BPM_MIN) / (BPM_MAX - BPM_MIN)) * 630;
 const ey = (k: number) => 350 - k * 26;
 const r2 = (v: number) => Math.round(v * 100) / 100;
+/** 137.5–142.4 → 140 */
+const bin = (bpm: number) => Math.round(bpm / BIN) * BIN;
 
-const ticks = [120, 125, 130, 135, 140, 145, 150];
+const ticks: number[] = [];
+for (let t = BPM_MIN; t <= BPM_MAX; t += BIN) ticks.push(t);
 
-// Deterministic vertical jitter so dots on the same key don't sit on one line.
-const jitter = rng(42);
-const dots = points.map((p, i) => {
+const counts = new Map<string, { bpm: number; k: number; n: number; who?: string }>();
+for (const p of points) {
+  const bpm = bin(p.bpm);
+  if (bpm < BPM_MIN || bpm > BPM_MAX) continue;
   const k = keyIndex(p.key);
-  const j = (jitter() - 0.5) * 12;
-  const who = [p.artist, p.title].filter(Boolean).join(' – ') || 'Track';
-  return {
-    cx: r2(ex(p.bpm)),
-    cy: r2(ey(k) + j),
-    i,
-    tip: `${who} · ${Math.round(p.bpm)} bpm · ${KEY_NAMES[k]}`,
-  };
-});
+  const id = `${bpm}/${k}`;
+  const cell = counts.get(id) ?? { bpm, k, n: 0 };
+  cell.n += 1;
+  cell.who = cell.n === 1 ? [p.artist, p.title].filter(Boolean).join(' – ') : undefined;
+  counts.set(id, cell);
+}
+const cells = [...counts.values()].sort((a, b) => a.bpm - b.bpm || a.k - b.k);
+const most = Math.max(1, ...cells.map((c) => c.n));
+
+/** Drop-in delay between dots, ms: 35, shortened so the whole drop takes ~2s. */
+const step = r2(Math.min(35, 2000 / Math.max(cells.length, 1)));
+
+const dots = cells.map((c, i) => ({
+  cx: r2(ex(c.bpm)),
+  cy: ey(c.k),
+  r: r2(12 * Math.sqrt(c.n / most)),
+  i,
+  tip: [c.who || `${c.n} ${c.n === 1 ? 'track' : 'tracks'}`, `${c.bpm} bpm`, KEY_NAMES[c.k]].join(' · '),
+}));
 
 const hl = highlight && {
-  cx: r2(ex((highlight.bpm[0] + highlight.bpm[1]) / 2)),
-  cy: r2((ey(keyIndex(highlight.keys[0])) + ey(keyIndex(highlight.keys[1]))) / 2),
-  rx: r2((ex(highlight.bpm[1]) - ex(highlight.bpm[0])) / 2),
-  ry: r2((ey(keyIndex(highlight.keys[0])) - ey(keyIndex(highlight.keys[1]))) / 2 + 20),
-  lx: r2(ex(highlight.bpm[1] + 0.7)),
-  ly: r2(ey(keyIndex(highlight.keys[1])) - 10),
+  x: r2(ex(bin(highlight.bpm[0])) - 22),
+  y: ey(keyIndex(highlight.keys[1])) - 18,
+  w: r2(ex(bin(highlight.bpm[1])) - ex(bin(highlight.bpm[0])) + 44),
+  h: ey(keyIndex(highlight.keys[0])) - ey(keyIndex(highlight.keys[1])) + 36,
   label: highlight.label,
 };
 ---
 
-<figure class:list={['scatter', className]} data-scatter>
+<figure class:list={['scatter', className]} data-scatter data-step={step} style={`--step:${step}ms;--dots:${dots.length}`}>
   <svg viewBox="0 0 760 410" preserveAspectRatio="xMinYMid meet" role="img" aria-label={summary}>
     <g class="scatter__grid" aria-hidden="true">
       {
@@ -98,7 +114,7 @@ const hl = highlight && {
     <g class="scatter__dots">
       {
         dots.map((d) => (
-          <circle cx={d.cx} cy={d.cy} r="5" fill="#131211" fill-opacity=".82" style={`--i:${d.i}`} data-tip={d.tip}>
+          <circle cx={d.cx} cy={d.cy} r={d.r} fill="#131211" style={`--i:${d.i}`} data-tip={d.tip}>
             <title>{d.tip}</title>
           </circle>
         ))
@@ -106,9 +122,9 @@ const hl = highlight && {
     </g>
     {
       hl && (
-        <g aria-hidden="true">
-          <ellipse cx={hl.cx} cy={hl.cy} rx={hl.rx} ry={hl.ry} fill="none" stroke-width="2.5" style="stroke:var(--accent)" />
-          <text x={hl.lx} y={hl.ly} font-size="11.5" fill="#131211" class="ff-mono">
+        <g class="scatter__hl" aria-hidden="true">
+          <rect x={hl.x} y={hl.y} width={hl.w} height={hl.h} rx="10" pathLength="1" fill="none" stroke-width="2.5" style="stroke:var(--accent)" />
+          <text x={r2(hl.x + hl.w + 8)} y={hl.y + 10} font-size="11.5" fill="#131211" class="ff-mono">
             {hl.label}
           </text>
         </g>
@@ -116,7 +132,7 @@ const hl = highlight && {
     }
     <g aria-hidden="true" font-size="11.5" fill="#131211" class="ff-mono">
       <text x="740" y="404" text-anchor="end" xml:space="preserve">Speed, beats per minute →   slower · faster</text>
-      <text x="0" y="26">Musical key</text>
+      <text x="0" y="26">Musical key (Camelot)</text>
     </g>
   </svg>
   <div class="scatter__tip mono" role="status" aria-live="polite" hidden></div>
@@ -134,18 +150,42 @@ const hl = highlight && {
     overflow: visible;
   }
   .scatter__dots circle {
-    transition: fill-opacity 120ms;
+    transition: fill 120ms;
   }
   .scatter__dots circle:hover,
   .scatter__dots circle.is-active {
-    fill-opacity: 1;
+    fill: var(--accent);
   }
-  :global(.scatter.will-drop) .scatter__dots circle {
+  :global(.scatter.will-drop) .scatter__dots circle,
+  :global(.scatter.will-drop) .scatter__hl text {
     opacity: 0;
+  }
+  :global(.scatter.will-drop) .scatter__hl rect {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  /* The box draws on once the last dot has landed, then its label fades in. */
+  :global(.scatter.is-dropping) .scatter__hl rect {
+    animation: scatter-draw 600ms var(--ease-lift) both;
+    animation-delay: calc(var(--dots) * var(--step, 35ms) + 420ms);
+  }
+  :global(.scatter.is-dropping) .scatter__hl text {
+    animation: scatter-fade 250ms ease-out both;
+    animation-delay: calc(var(--dots) * var(--step, 35ms) + 900ms);
+  }
+  @keyframes scatter-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes scatter-fade {
+    to {
+      opacity: 1;
+    }
   }
   :global(.scatter.is-dropping) .scatter__dots circle {
     animation: scatter-drop 420ms var(--ease-lift) both;
-    animation-delay: calc(var(--i) * 35ms);
+    animation-delay: calc(var(--i) * var(--step, 35ms));
   }
   @keyframes scatter-drop {
     from {
@@ -176,6 +216,15 @@ const hl = highlight && {
       opacity: 1;
     }
     :global(.scatter.is-dropping) .scatter__dots circle {
+      animation: none;
+    }
+    :global(.scatter.will-drop) .scatter__hl text {
+      opacity: 1;
+    }
+    :global(.scatter.will-drop) .scatter__hl rect {
+      stroke-dashoffset: 0;
+    }
+    :global(.scatter.is-dropping) .scatter__hl * {
       animation: none;
     }
   }

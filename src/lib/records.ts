@@ -17,7 +17,7 @@ const byCat = (a: { data: { cat?: string | undefined } }, b: { data: { cat?: str
   (a.data.cat ?? '').localeCompare(b.data.cat ?? '', 'en', { numeric: true });
 
 export async function getRecords() {
-  const all = await getCollection('records');
+  const all = await getCollection('records', (r) => !r.data.hidden);
   const career = all.filter((r): r is Career => r.data.type === 'career').sort(byCat);
   const experiments = all.filter((r): r is Experiment => r.data.type === 'experiment').sort(byCat);
   const playing = all
@@ -26,7 +26,7 @@ export async function getRecords() {
   return { career, experiments, playing };
 }
 
-/** "HLV-004" → "hlv-004" */
+/** "SLM-004" → "slm-004" */
 export const slug = (cat: string) => cat.toLowerCase();
 /** "01-hard-techno" → "hard-techno" */
 export const genreSlug = (id: string) => id.replace(/^\d+-/, '');
@@ -36,7 +36,7 @@ export const sideHref = (r: Career, side: string) => `/records/${slug(r.data.cat
 export const experimentHref = (r: Experiment) => `/experiments/${slug(r.data.cat)}/`;
 export const genreHref = (r: Playing) => `/playing/#${genreSlug(r.id)}`;
 
-/** The record index used to seed the cover drawing: "HLV-004" → 4. */
+/** The record index used to seed the cover drawing: "SLM-004" → 4. */
 export const seedOf = (cat: string) => Number.parseInt(cat.replace(/\D/g, ''), 10) || 1;
 
 /** Sides with content (the empty Side D is decorative). */
@@ -86,7 +86,7 @@ export function experimentLabel(r: Experiment): LabelData {
   return { variant: 'white', cat: r.data.cat, title: r.data.labelTitle ?? r.data.handTitle };
 }
 
-/** Runout etching: "{sha} · pressing {n} · HLV-004 · side B ·" */
+/** Runout etching: "{sha} · pressing {n} · SLM-004 · side B ·" */
 export function careerEtch(r: Career, s: Side): string {
   const pressing = latestPressing ? ` · pressing ${pad2(latestPressing.number)}` : '';
   return `${commitSha}${pressing} · ${r.data.cat} · side ${s.side} ·`;

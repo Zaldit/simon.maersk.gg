@@ -2,8 +2,8 @@
 /**
  * Press a new release of the site.
  *
- *   npm run press -- "Added HLV-X02"
- *   npm run press -- "Added HLV-X02" --dry-run
+ *   npm run press -- "Added SLM-X02"
+ *   npm run press -- "Added SLM-X02" --dry-run
  *
  * 1. Checks the working tree is clean (commit your changes first).
  * 2. Appends { number, description, sha } to src/content/pressings.json, where
@@ -34,7 +34,7 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-if (!description) fail('describe the pressing, e.g. npm run press -- "Added HLV-X02"');
+if (!description) fail('describe the pressing, e.g. npm run press -- "Added SLM-X02"');
 
 const dirty = git('status', '--porcelain', '--untracked-files=no');
 if (dirty) fail(`commit or stash your changes first:\n${dirty}`);

@@ -1,3 +1,10 @@
 # Cloudflare Pages treats /index as the root index and redirects it to /.
 # Send it to the plain index page instead.
 /index /index/ 301
+
+# The label was renamed from HALVTONE (HLV) to SLIM (SLM) after pressing 01.
+/records/hlv-001/* /records/slm-001/:splat 301
+/records/hlv-002/* /records/slm-002/:splat 301
+/records/hlv-003/* /records/slm-003/:splat 301
+/records/hlv-004/* /records/slm-004/:splat 301
+/experiments/hlv-x01/* /experiments/slm-x01/:splat 301

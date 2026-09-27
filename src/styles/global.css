@@ -156,7 +156,7 @@ a:hover {
 }
 
 /* Slow loops only: 18s / 24s / 30s. Never strobe. */
-@keyframes hlv-spin {
+@keyframes slm-spin {
   to {
     transform: rotate(360deg);
   }
@@ -164,7 +164,7 @@ a:hover {
 .spin-18,
 .spin-24,
 .spin-30 {
-  animation: hlv-spin var(--spin, 24s) linear infinite;
+  animation: slm-spin var(--spin, 24s) linear infinite;
   transform-origin: 50% 50%;
 }
 .spin-18 { --spin: 18s; }

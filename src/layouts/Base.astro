@@ -12,7 +12,7 @@ interface Props {
   background?: string;
 }
 const { title, description = site.description, grain = true, background } = Astro.props;
-const fullTitle = title ? `${title} — ${site.label}` : site.label;
+const fullTitle = title ? `${title} — ${site.name}` : site.name;
 ---
 
 <!doctype html>

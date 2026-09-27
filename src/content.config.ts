@@ -41,11 +41,13 @@ const sticker = z.object({
 });
 
 const base = {
-  /** Catalog number: HLV-001–099 career, HLV-X01– experiments. */
+  /** Catalog number: SLM-001–099 career, SLM-X01– experiments. */
   cat: z.string(),
   size: z.enum(['small', 'large', 'large-spine', 'double']).default('large'),
   title: z.string().optional(),
   sticker: sticker.optional(),
+  /** Left out of the build: no page, not in the crate or the index. */
+  hidden: z.boolean().default(false),
 };
 
 const career = z.object({

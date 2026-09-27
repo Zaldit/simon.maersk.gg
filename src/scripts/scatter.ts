@@ -1,7 +1,7 @@
 /**
  * Experiment scatter (frame 1f): dots drop in one at a time the first time the
- * chart scrolls into view (once, never looped), and hovering or tapping a dot
- * shows its track. Reduced motion: the chart is shown complete.
+ * chart scrolls into view (once, never looped, ~2s at most), and hovering or tapping a dot
+ * shows how many tracks it stands for. Reduced motion: the chart is shown complete.
  */
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -20,7 +20,8 @@ document.querySelectorAll<HTMLElement>('[data-scatter]').forEach((fig) => {
         if (!entries.some((e) => e.isIntersecting)) return;
         io.disconnect();
         fig.classList.add('is-dropping');
-        const last = dots.length * 35 + 500;
+        // Dots, then the highlight box drawing on and its label (ScatterChart.astro).
+        const last = dots.length * Number(fig.dataset.step ?? 35) + 1250;
         window.setTimeout(() => fig.classList.remove('will-drop', 'is-dropping'), last);
       },
       { threshold: 0.3 },

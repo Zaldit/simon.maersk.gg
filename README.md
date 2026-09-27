@@ -1,4 +1,4 @@
-# HALVTONE
+# Slim Records
 
 A personal site framed as the record crate of a fictional techno label. Every piece of content is a record. The design handoff lives in [`handoff/`](handoff/README.md).
 
@@ -26,8 +26,8 @@ npm run preview
 
 Add one file to `src/content/records/`. No other code changes are needed. The schema is in `src/content.config.ts`.
 
-- **Career** (`type: career`, catalog `HLV-001`–`099`): company, years, cover stage 0–3, `coverSeries` (the numbers the cover is drawn from), and `sides[]` (each role: story, outcome, tracks, why I moved on).
-- **Experiment** (`type: experiment`, catalog `HLV-X01`–): headline, handwritten title, optional scatter chart data, findings. The MDX body is the intro.
+- **Career** (`type: career`, catalog `SLM-001`–`099`): company, years, cover stage 0–3, `coverSeries` (the numbers the cover is drawn from), and `sides[]` (each role: story, outcome, tracks, why I moved on).
+- **Experiment** (`type: experiment`, catalog `SLM-X01`–): headline, handwritten title, optional scatter chart data, findings. The MDX body is the intro.
 - **What I'm playing** (`type: playing`): one file per genre. Files sort by name (`01-…`, `02-…`); the first is the insert shown in the crate.
 
 Everything in `[brackets]` is placeholder copy. Site-wide copy (label name, credits, welcome line) is in `src/site.ts`.
@@ -35,7 +35,7 @@ Everything in `[brackets]` is placeholder copy. Site-wide copy (label name, cred
 ## Press a release
 
 ```sh
-npm run press -- "Added HLV-X02"
+npm run press -- "Added SLM-X02"
 ```
 
 This appends `{ number, description, sha }` to `src/content/pressings.json` (sha = the current HEAD), commits that file, and tags `pressing-N`. Nothing is pushed. The build never reads git tags; the runout etching uses `CF_PAGES_COMMIT_SHA`, or `git rev-parse` locally.

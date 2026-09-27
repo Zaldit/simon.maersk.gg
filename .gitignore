@@ -17,3 +17,6 @@ npm-debug.log*
 
 # local wrangler state
 .wrangler/
+
+# Local exports (playlists, collections): personal data, not published
+data/

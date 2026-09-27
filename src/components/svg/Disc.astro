@@ -1,0 +1,89 @@
+---
+/**
+ * Disc (viewBox 0 0 200 200): flat and stylised, never photorealistic.
+ * Grooves r 42–97 every 1.5; 2–3 darker track-gap rings spaced by the track
+ * count; the centre label nested at 66,66 (68×68); an optional runout etching
+ * on a circle at r 38.4; a static sheen that does not rotate with the face.
+ */
+import CenterLabel, { type LabelData } from './CenterLabel.astro';
+import { uid } from '../../lib/ids';
+
+interface Props {
+  label: LabelData;
+  /** Tracks on this side; sets how many gap rings (2–3) and where. */
+  trackCount?: number;
+  /** Runout etching text, repeated around the label. Decorative. */
+  etch?: string;
+  /** Slow loop: once every 18/24/30 s. */
+  spin?: 18 | 24 | 30;
+  class?: string;
+}
+
+const { label, trackCount = 3, etch, spin, class: className } = Astro.props;
+
+const grooves: number[] = [];
+for (let r = 42; r < 97; r += 1.5) grooves.push(Math.round(r * 100) / 100);
+
+// Evenly split the groove band (42–97) by the number of gap rings.
+const rings = Math.min(3, Math.max(2, trackCount));
+const gaps = Array.from({ length: rings }, (_, i) => Math.round((42 + (55 * (i + 1)) / (rings + 1)) * 10) / 10);
+
+const etchId = etch ? uid('etch') : undefined;
+const etchText = etch ? `${etch} ${etch}` : '';
+
+const arc = (r: number, a0: number, a1: number) => {
+  const p = (a: number) => [100 + Math.cos(a) * r, 100 + Math.sin(a) * r].map((v) => Math.round(v * 100) / 100);
+  const [x0, y0] = p(a0);
+  const [x1, y1] = p(a1);
+  return `M${x0} ${y0}A${r} ${r} 0 0 1 ${x1} ${y1}`;
+};
+---
+
+<div class:list={['disc', className]} aria-hidden="true">
+  <svg class:list={['disc__face', spin && `spin-${spin}`]} viewBox="0 0 200 200" focusable="false">
+    <circle cx="100" cy="100" r="99" fill="#0e0d0c"></circle>
+    <g fill="none" stroke="#272523" stroke-width=".4">
+      {grooves.map((r) => <circle cx="100" cy="100" r={r} />)}
+    </g>
+    <g fill="none" stroke="#050505" stroke-width="1.4">
+      {gaps.map((r) => <circle cx="100" cy="100" r={r} />)}
+    </g>
+    {
+      etchId && (
+        <>
+          <defs>
+            <path id={etchId} d="M100 100m-38.4 0a38.4 38.4 0 1 1 76.8 0a38.4 38.4 0 1 1 -76.8 0" />
+          </defs>
+          <text font-size="2.5" letter-spacing=".5" fill="#8a857b" style="font-family:var(--f-mono)">
+            <textPath href={`#${etchId}`} data-etch>
+              {etchText}
+            </textPath>
+          </text>
+        </>
+      )
+    }
+    <CenterLabel {...label} x={66} y={66} size={68} />
+  </svg>
+  <svg class="disc__sheen" viewBox="0 0 200 200" focusable="false">
+    <path d={arc(70, -2.5, -1.6)} stroke="rgba(235,230,219,.035)" stroke-width="34" fill="none"></path>
+    <path d={arc(70, 0.65, 1.5)} stroke="rgba(235,230,219,.025)" stroke-width="34" fill="none"></path>
+  </svg>
+</div>
+
+<style>
+  .disc {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .disc svg {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+  }
+  .disc__sheen {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+</style>

@@ -1,0 +1,101 @@
+---
+/** / — the crate (frame 1b on desktop, 1i on mobile). */
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import CrateDesktop from '../components/crate/CrateDesktop.astro';
+import CrateMobile from '../components/crate/CrateMobile.astro';
+import { getRecords } from '../lib/records';
+import { crateEntries, defaultPulled } from '../lib/crateItems';
+import { site } from '../site';
+
+const { career, experiments, playing } = await getRecords();
+const entries = crateEntries(career, experiments, playing);
+const pulled = defaultPulled(entries);
+---
+
+<Base>
+  <div class="crate-page">
+    <div class="frame">
+      <Header links={[{ href: '/index/', label: 'Index' }, { href: '/index/#pressing-history', label: 'Pressing history', desktopOnly: true }]} />
+      <main id="main" class="crate-main">
+        <h1 class="welcome">{site.welcome}</h1>
+        <div class="only-desktop">
+          <CrateDesktop entries={entries} pulled={pulled} />
+        </div>
+        <div class="only-mobile">
+          <CrateMobile entries={entries} pulled={pulled} />
+        </div>
+      </main>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import '../scripts/crate.ts';
+</script>
+
+<style>
+  .crate-page {
+    position: relative;
+    min-height: max(100svh, 800px);
+    overflow: hidden;
+  }
+  .frame {
+    position: absolute;
+    inset: 0;
+    max-width: var(--frame);
+    margin-inline: auto;
+  }
+  .welcome {
+    position: absolute;
+    top: 136px;
+    left: var(--gutter);
+    max-width: 820px;
+    margin-right: var(--gutter);
+    font: 700 50px/1.02 var(--f-display);
+    font-stretch: 78%;
+    letter-spacing: -0.01em;
+    text-wrap: pretty;
+    text-shadow: var(--ghost-soft);
+  }
+  .only-mobile {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .crate-page,
+    .frame,
+    .crate-main,
+    .only-mobile {
+      display: flex;
+      flex-direction: column;
+    }
+    .crate-page {
+      min-height: 100svh;
+      overflow: visible;
+    }
+    .frame {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      flex: 1;
+    }
+    .crate-main,
+    .only-mobile {
+      flex: 1;
+    }
+    .only-desktop {
+      display: none;
+    }
+    .crate-main {
+      padding-top: 86px;
+    }
+    .welcome {
+      position: static;
+      min-height: 136px;
+      margin: 0 var(--gutter);
+      font-size: 29px;
+      line-height: 1.04;
+    }
+  }
+</style>

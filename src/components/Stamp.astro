@@ -1,0 +1,70 @@
+---
+/**
+ * Rubber stamp: a bordered ink impression, rotated a few degrees, with uneven
+ * ink (a paper-coloured noise knockout on top). Paper-toned stamps on dark
+ * surfaces skip the knockout.
+ */
+import Grain from './Grain.astro';
+
+interface Props {
+  shape?: 'rect' | 'round';
+  tone?: 'ink' | 'paper';
+  border?: number;
+  rotate?: number;
+  opacity?: number;
+  /** Round stamps: diameter. */
+  size?: number;
+  radius?: number;
+  class?: string;
+  style?: string;
+  decorative?: boolean;
+}
+
+const {
+  shape = 'rect',
+  tone = 'ink',
+  border = 3,
+  rotate = -4,
+  opacity = 0.85,
+  size = 120,
+  radius = 0,
+  class: className,
+  style = '',
+  decorative = false,
+} = Astro.props;
+---
+
+<span
+  class:list={['stamp', `stamp--${shape}`, `stamp--${tone}`, className]}
+  style={`--b:${border}px;--rot:${rotate}deg;--op:${opacity};--size:${size}px;--rad:${radius}px;${style}`}
+  aria-hidden={decorative ? 'true' : undefined}>
+  <slot />
+  {tone === 'ink' && <Grain tone="ink" />}
+</span>
+
+<style>
+  .stamp {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: var(--b) solid var(--c);
+    border-radius: var(--rad);
+    color: var(--c);
+    opacity: var(--op);
+    transform: rotate(var(--rot));
+  }
+  .stamp--ink {
+    --c: var(--ink);
+  }
+  .stamp--paper {
+    --c: var(--paper);
+  }
+  .stamp--round {
+    flex: none;
+    flex-direction: column;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+  }
+</style>

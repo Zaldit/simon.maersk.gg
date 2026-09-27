@@ -1,0 +1,530 @@
+---
+/**
+ * /dev/specimens — the label identity sheet (frame 1a) rebuilt from the real
+ * components, plus the generated visuals it doesn't show. Dev server only:
+ * getStaticPaths returns nothing in production builds.
+ */
+import Base from '../../layouts/Base.astro';
+import LogoMark from '../../components/LogoMark.astro';
+import Stamp from '../../components/Stamp.astro';
+import Sticker from '../../components/Sticker.astro';
+import CoverArt from '../../components/svg/CoverArt.astro';
+import CenterLabel from '../../components/svg/CenterLabel.astro';
+import Disc from '../../components/svg/Disc.astro';
+import ScatterChart from '../../components/svg/ScatterChart.astro';
+import PlayingChart from '../../components/svg/PlayingChart.astro';
+import { placeholderSeries } from '../../lib/series';
+import { commitSha } from '../../lib/build';
+import { site } from '../../site';
+
+export function getStaticPaths() {
+  return import.meta.env.DEV ? [{ params: { page: 'specimens' } }] : [];
+}
+
+const covers = [
+  { stage: 0, note: '001 · report line' },
+  { stage: 1, note: '002 · bars' },
+  { stage: 2, note: '003 · halftone field' },
+  { stage: 3, note: '004 · radial, misregistered' },
+] as const;
+
+const scatterPoints = [
+  { bpm: 131, key: '8A' },
+  { bpm: 129.5, key: '9A' },
+  { bpm: 133, key: '7A' },
+  { bpm: 124, key: '2A' },
+  { bpm: 142, key: '11A' },
+];
+const playing = [
+  [145, 8],
+  [146, 9],
+  [148, 9],
+  [150, 10],
+  [148, 9],
+  [152, 10],
+  [150, 9],
+  [147, 8],
+].map(([bpm, energy]) => ({ bpm: bpm!, energy: energy! }));
+---
+
+<Base title="Specimens">
+  <main id="main" class="specimens">
+    <section class="sheet" aria-label="Label identity sheet">
+      <div class="cell c-logo">
+        <p class="cell__h">01 — LOGO</p>
+        <div class="big-lockup">
+          <LogoMark size={84} border={7} />
+          <span class="big-word">{site.label}</span>
+        </div>
+        <div class="logo-row">
+          <span class="lockup"><LogoMark size={22} border={2} /><span class="lockup__word">{site.label}</span></span>
+          <span class="reversed"><LogoMark size={26} border={2} tone="paper" /></span>
+          <span>Half filled, half open: using the tools / building them.</span>
+        </div>
+      </div>
+
+      <div class="cell c-stamp">
+        <p class="cell__h">02 — RUBBER STAMP</p>
+        <Stamp border={4} radius={5} rotate={-4} opacity={0.88} class="rect-stamp">
+          <span class="rect-stamp__top"><LogoMark size={26} border={3} /><span>{site.label}</span></span>
+          <span class="rect-stamp__city">{site.city}</span>
+        </Stamp>
+        <div class="stamp-row">
+          <Stamp shape="round" size={120} border={4} rotate={8} opacity={0.85}>
+            <span class="round-small">CATALOG</span>
+            <span class="round-big">X01</span>
+            <span class="round-small">{site.label}</span>
+          </Stamp>
+          <p class="note">Uneven ink, rotated a few degrees, never twice the same angle.</p>
+        </div>
+      </div>
+
+      <div class="cell c-label">
+        <p class="cell__h">03 — CENTRE LABEL TEMPLATE</p>
+        <div class="label-row">
+          <div class="label-demo">
+            <CenterLabel cat="HLV-000" line="Employer" years="YYYY – YYYY" side="A" count="1/1" />
+          </div>
+          <ul class="label-notes plain-list" role="list">
+            <li>↑ stamp mark + wordmark</li>
+            <li>← side (A, B, C)</li>
+            <li>● catalog no. — largest</li>
+            <li>↓ employer or title</li>
+            <li>↓ years, always printed</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cell c-stickers">
+        <p class="cell__h">04 — STICKERS · one accent, three treatments = three record types</p>
+        <div class="sticker-row">
+          <figure>
+            <Sticker kind="career" size={132} rotate={-7} big="26px" small="11px">
+              <span class="sticker__big">Career</span><span class="sticker__small">HLV-00X</span>
+            </Sticker>
+            <figcaption>solid</figcaption>
+          </figure>
+          <figure>
+            <Sticker kind="experiment" size={132} ring={108} rotate={5} big="20px" small="11px">
+              <span class="sticker__big">Experiment</span><span class="sticker__small">HLV-X0X</span>
+            </Sticker>
+            <figcaption>stamped ring</figcaption>
+          </figure>
+          <figure>
+            <Sticker kind="playing" size={132} rotate={-3} big="20px">
+              <span class="sticker__big">What I'm<br />playing</span>
+            </Sticker>
+            <figcaption>accent on black</figcaption>
+          </figure>
+          <div class="sticker-specials">
+            <Sticker kind="return" size={86} rotate={12} big="15px">
+              <span class="sticker__big">Back<br />again</span>
+            </Sticker>
+            <Sticker kind="progress" rotate={-2} small="12px">in progress</Sticker>
+          </div>
+          <Sticker kind="headline" size={230} rotate={3} big="22px" small="10px">
+            <span class="sticker__big">From using the tools to building them.</span>
+            <span class="sticker__small">BI → engineering · inside</span>
+          </Sticker>
+        </div>
+      </div>
+
+      <div class="cell c-cats">
+        <p class="cell__h">05 — CATALOG NUMBERS</p>
+        <p class="cat-big">HLV-004</p>
+        <p class="cat-title">Crayon — title sits smaller than the number</p>
+        <div class="cat-row">
+          <span class="edition">043/300</span>
+          <Stamp border={3} rotate={3} class="cat-stamp">HLV-X01</Stamp>
+          <span class="note">001–099 career<br />X01– experiments</span>
+        </div>
+      </div>
+
+      <div class="cell c-covers">
+        <p class="cell__h">06 — COVER SYSTEM · drawn from each record's data</p>
+        <div class="cover-row">
+          {
+            covers.map((c, i) => (
+              <figure>
+                <div class="cover-box">
+                  <CoverArt stage={c.stage} series={placeholderSeries(i + 1, 120)} seed={i + 1} />
+                </div>
+                <figcaption>{c.note}</figcaption>
+              </figure>
+            ))
+          }
+        </div>
+        <p class="note wide">
+          Same seeded series feeds every cover; only the drawing rule changes. Swap the placeholder series for real
+          numbers per role (tickets, rows shipped, commits…).
+        </p>
+      </div>
+
+      <div class="cell c-type">
+        <p class="cell__h">07 — TYPE</p>
+        <div><p class="type-a">Archivo 72%</p><p class="note">identity, titles, body</p></div>
+        <div><p class="type-m">IBM Plex Mono</p><p class="note">catalog nos., metadata, credits</p></div>
+        <div><p class="type-h">marker hand</p><p class="note">white-label titles, edition numbers only</p></div>
+      </div>
+
+      <div class="cell c-palette">
+        <p class="cell__h">08 — PALETTE</p>
+        <ul class="swatches plain-list" role="list">
+          <li><span style="background:var(--ink)"></span>ink #131211</li>
+          <li><span style="background:var(--paper);box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)"></span>paper #ebe6db</li>
+          <li><span style="background:var(--card)"></span>card stock #d6cfbf</li>
+          <li><span style="background:var(--accent)"></span>accent — stickers + markers only</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="extra" aria-label="Generated visuals">
+      <h2 class="cell__h">EXTRA — generated visuals not on sheet 1a</h2>
+      <div class="extra-row">
+        <figure>
+          <div class="disc-box"><Disc label={{ cat: 'HLV-004', line: 'Crayon', years: '2023 – now', side: 'B', count: '2/4' }} trackCount={3} etch={`${commitSha} · pressing 01 · HLV-004 · side B ·`} spin={24} /></div>
+          <figcaption>Disc · runout etching = {commitSha} · 24s</figcaption>
+        </figure>
+        <figure>
+          <div class="disc-box"><Disc label={{ variant: 'white', cat: 'HLV-X01', title: 'USB · tempo + key' }} trackCount={2} etch={`${commitSha} · test pressing ·`} spin={30} /></div>
+          <figcaption>White-label disc · 30s</figcaption>
+        </figure>
+        <figure>
+          <div class="label-box spin-18"><CenterLabel cat="HLV-004" line="Crayon" years="2023 – now" side="B" count="2/4" /></div>
+          <figcaption>Centre label in a die-cut · 18s</figcaption>
+        </figure>
+        <figure>
+          <div class="label-box"><CenterLabel variant="white" cat="HLV-X01" title="USB · tempo + key" /></div>
+          <figcaption>White label</figcaption>
+        </figure>
+      </div>
+      <div class="chart-row">
+        <figure class="scatter-box">
+          <ScatterChart
+            points={scatterPoints}
+            highlight={{ bpm: [128.2, 135.8], keys: ['7A', '10A'], label: '← the sweet spot' }}
+            summary="Specimen scatter"
+          />
+        </figure>
+        <figure class="playing-box">
+          <PlayingChart tracks={playing} summary="Specimen playing chart" />
+        </figure>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .specimens {
+    padding: 40px 0 80px;
+    overflow-x: auto;
+  }
+  .sheet {
+    position: relative;
+    width: 1440px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: 380px 400px 400px;
+  }
+  .cell {
+    padding: 48px 40px;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+  }
+  .cell__h {
+    margin: 0;
+    font: 12px var(--f-mono);
+    letter-spacing: 0.08em;
+  }
+  .note {
+    font: 11px/1.6 var(--f-mono);
+    color: var(--muted);
+    max-width: 150px;
+  }
+  .note.wide {
+    max-width: 620px;
+  }
+
+  .c-logo {
+    grid-column: 1 / 6;
+    padding: 48px 56px;
+    justify-content: space-between;
+  }
+  .big-lockup {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .big-word {
+    font: 850 104px/0.85 var(--f-display);
+    font-stretch: 72%;
+    letter-spacing: -0.01em;
+    text-shadow: var(--ghost);
+  }
+  .logo-row {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    font: 12px var(--f-mono);
+    color: var(--muted);
+  }
+  .lockup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lockup__word {
+    font: 800 20px var(--f-display);
+    font-stretch: 75%;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+  }
+  .reversed {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .c-stamp {
+    grid-column: 6 / 9;
+    gap: 36px;
+  }
+  .rect-stamp {
+    align-self: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 22px;
+    margin-left: 12px;
+  }
+  .rect-stamp__top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 850 38px/1 var(--f-display);
+    font-stretch: 72%;
+  }
+  .rect-stamp__city {
+    font: 700 13px var(--f-mono);
+    letter-spacing: 0.3em;
+  }
+  .stamp-row {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .round-small {
+    font: 9px var(--f-mono);
+    letter-spacing: 0.2em;
+  }
+  .round-big {
+    font: 700 22px var(--f-mono);
+  }
+
+  .c-label {
+    grid-column: 9 / 13;
+    border-right: 0;
+    gap: 20px;
+  }
+  .label-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  .label-demo {
+    width: 230px;
+    height: 230px;
+    flex: none;
+    border-radius: 50%;
+    box-shadow: 0 0 0 14px var(--ink);
+  }
+  .label-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0 0 0 18px;
+    font: 11px/1.35 var(--f-mono);
+    color: var(--muted);
+  }
+
+  .c-stickers {
+    grid-column: 1 / 8;
+    padding: 48px 56px;
+    gap: 30px;
+  }
+  .sticker-row {
+    display: flex;
+    gap: 34px;
+    align-items: center;
+  }
+  .sticker-row figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .sticker-row figcaption {
+    font: 11px var(--f-mono);
+    color: var(--muted);
+  }
+  .sticker-specials {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-left: 10px;
+  }
+
+  .c-cats {
+    grid-column: 8 / 13;
+    border-right: 0;
+    gap: 26px;
+  }
+  .cat-big {
+    font: 700 96px/0.9 var(--f-mono);
+    letter-spacing: -0.03em;
+    text-shadow: var(--ghost);
+  }
+  .cat-title {
+    font: 600 22px var(--f-display);
+    font-stretch: 75%;
+    color: var(--muted);
+  }
+  .cat-row {
+    display: flex;
+    gap: 36px;
+    align-items: center;
+  }
+  .edition {
+    font: 700 44px var(--f-hand);
+    transform: rotate(-5deg);
+  }
+  .cat-stamp {
+    padding: 4px 10px;
+    font: 700 22px var(--f-mono);
+  }
+  .cat-row .note {
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: none;
+  }
+
+  .c-covers {
+    grid-column: 1 / 7;
+    padding: 48px 56px;
+    border-bottom: 0;
+    gap: 24px;
+  }
+  .cover-row {
+    display: flex;
+    gap: 18px;
+  }
+  .cover-row figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cover-row figcaption {
+    font: 11px var(--f-mono);
+  }
+  .cover-box {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .c-type {
+    grid-column: 7 / 10;
+    border-bottom: 0;
+    gap: 22px;
+  }
+  .type-a {
+    font: 850 54px/0.95 var(--f-display);
+    font-stretch: 72%;
+  }
+  .type-m {
+    font: 600 26px var(--f-mono);
+  }
+  .type-h {
+    font: 700 40px/1 var(--f-hand);
+  }
+  .c-type .note {
+    max-width: none;
+    margin-top: 6px;
+  }
+
+  .c-palette {
+    grid-column: 10 / 13;
+    border: 0;
+    gap: 18px;
+  }
+  .swatches {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    font: 11px var(--f-mono);
+  }
+  .swatches li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .swatches span {
+    width: 64px;
+    height: 64px;
+  }
+
+  .extra {
+    width: 1440px;
+    margin: 0 auto;
+    padding: 48px 56px;
+    border-top: 1px solid var(--rule);
+  }
+  .extra-row {
+    display: flex;
+    gap: 48px;
+    align-items: flex-end;
+    margin: 28px 0 48px;
+  }
+  .extra figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font: 11px var(--f-mono);
+    color: var(--muted);
+  }
+  .disc-box {
+    width: 280px;
+    height: 280px;
+  }
+  .label-box {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+  .chart-row {
+    display: grid;
+    grid-template-columns: 760px 1fr;
+    gap: 48px;
+  }
+  .scatter-box {
+    height: 410px;
+  }
+  .playing-box {
+    height: 270px;
+    padding: 12px;
+    background: var(--insert-paper);
+  }
+</style>

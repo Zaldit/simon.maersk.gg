@@ -1,0 +1,127 @@
+---
+/**
+ * Centre label (viewBox 0 0 100 100). The catalog number is always the largest text.
+ * `white` is the experiment variant: handwritten title above the spindle,
+ * stamped catalog number in a rectangle below.
+ *
+ * Decorative: the same facts are always printed as text elsewhere on the page.
+ * Pass `x/y/size` to nest it inside another SVG (the disc).
+ */
+import { site } from '../../site';
+
+export interface LabelData {
+  variant?: 'print' | 'white';
+  cat: string;
+  /** Employer or title, under the catalog number. */
+  line?: string;
+  years?: string;
+  side?: string;
+  /** Side count, e.g. "2/4". */
+  count?: string;
+  /** White label: handwritten title. */
+  title?: string;
+}
+
+interface Props extends LabelData {
+  x?: number;
+  y?: number;
+  size?: number;
+  class?: string;
+}
+
+const {
+  variant = 'print',
+  cat,
+  line = '',
+  years = '',
+  side = 'A',
+  count = '',
+  title = '',
+  x,
+  y,
+  size,
+  class: className,
+} = Astro.props;
+
+const INK = '#131211';
+const white = variant === 'white';
+const bg = white ? '#f7f5f0' : '#ebe6db';
+const nested = size !== undefined;
+const display = 'font-family:var(--f-display)';
+const mono = 'font-family:var(--f-mono)';
+---
+
+<svg
+  class:list={[!nested && 'center-label', className]}
+  viewBox="0 0 100 100"
+  x={nested ? x : undefined}
+  y={nested ? y : undefined}
+  width={nested ? size : undefined}
+  height={nested ? size : undefined}
+  aria-hidden="true"
+  focusable="false">
+  <circle cx="50" cy="50" r="50" fill={bg}></circle>
+  <circle cx="50" cy="50" r="45.5" fill="none" stroke={INK} stroke-width=".35"></circle>
+  {
+    white ? (
+      <>
+        <text
+          x="50"
+          y="38"
+          text-anchor="middle"
+          font-weight="700"
+          font-size="10.5"
+          fill="#2a2826"
+          transform="rotate(-5 50 38)"
+          style="font-family:var(--f-hand)">
+          {title}
+        </text>
+        <g transform="rotate(3 50 67)">
+          <rect x="29" y="61" width="42" height="12" fill="none" stroke={INK} stroke-width="1" opacity=".8" />
+          <text x="50" y="70" text-anchor="middle" font-weight="700" font-size="8" fill={INK} opacity=".85" style={mono}>
+            {cat}
+          </text>
+        </g>
+      </>
+    ) : (
+      <>
+        <path d="M50 11a6.5 6.5 0 0 0 0 13z" fill={INK} />
+        <circle cx="50" cy="17.5" r="6.5" fill="none" stroke={INK} stroke-width=".9" />
+        <text
+          x="50"
+          y="32.5"
+          text-anchor="middle"
+          font-weight="800"
+          font-size="6.2"
+          letter-spacing=".8"
+          fill={INK}
+          style={`${display};font-stretch:75%`}>
+          {site.label}
+        </text>
+        <text x="21" y="53.5" text-anchor="middle" font-weight="800" font-size="9" fill={INK} style={display} data-label-side>
+          {side}
+        </text>
+        <text x="79" y="52.5" text-anchor="middle" font-size="3.6" fill={INK} style={mono} data-label-count>
+          {count}
+        </text>
+        <text x="50" y="69" text-anchor="middle" font-weight="700" font-size="11" fill={INK} style={mono}>
+          {cat}
+        </text>
+        <text x="50" y="77.5" text-anchor="middle" font-weight="600" font-size="4.8" fill={INK} style={display}>
+          {line}
+        </text>
+        <text x="50" y="84" text-anchor="middle" font-size="3.8" fill={INK} style={mono}>
+          {years}
+        </text>
+      </>
+    )
+  }
+  <circle cx="50" cy="50" r="2.4" fill={INK}></circle>
+</svg>
+
+<style>
+  .center-label {
+    width: 100%;
+    height: 100%;
+  }
+</style>

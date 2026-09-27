@@ -1,0 +1,274 @@
+---
+/**
+ * The crate, mobile (frame 1i), seen from above: up to three records behind
+ * the pulled one peek over it as 60px strips. Tabs jump between sections;
+ * swiping (or the arrows on the lip) flips. Every record is a link, so it
+ * still works without JS. Behaviour: src/scripts/crate.ts.
+ */
+import CareerSleeve from '../sleeve/CareerSleeve.astro';
+import WhiteSleeve from '../sleeve/WhiteSleeve.astro';
+import InsertCard from '../sleeve/InsertCard.astro';
+import Grain from '../Grain.astro';
+import { SECTIONS, type CrateEntry } from '../../lib/crateItems';
+import { previewBranch } from '../../lib/build';
+
+interface Props {
+  entries: CrateEntry[];
+  pulled: number;
+}
+const { entries, pulled } = Astro.props;
+const current = entries[pulled]!;
+
+function state(i: number): string {
+  if (i === pulled) return 'pulled';
+  const e = entries[i]!;
+  const d = pulled - i;
+  if (e.section === current.section && d >= 1 && d <= 3) return `behind-${d}`;
+  return 'hidden';
+}
+const sections = SECTIONS.filter((s) => entries.some((e) => e.section === s.id));
+---
+
+<section class="mcrate" data-mcrate aria-labelledby="mcrate-title">
+  <h2 id="mcrate-title" class="visually-hidden">Records</h2>
+  <div class="mcrate__tabs">
+    {
+      sections.map((s) => (
+        <button type="button" class="mtab" data-jump={s.id} aria-pressed={s.id === current.section ? 'true' : 'false'}>
+          {s.label}
+        </button>
+      ))
+    }
+  </div>
+  <div class="mcrate__joiner" aria-hidden="true"></div>
+
+  <ul class="mcrate__stack plain-list" role="list" data-mcrate-stack>
+    {
+      entries.map((e, i) => (
+        <li
+          class:list={['mitem', `mitem--${e.kind}`, e.kind === 'career' && e.record.data.size === 'small' && 'mitem--small']}
+          data-state={state(i)}
+          data-entry={i}
+          data-section={e.section}
+          data-href={e.href}
+          data-name={e.name}
+          data-meta={e.meta}>
+          <a class="mitem__link" href={e.href} tabindex={i === pulled ? undefined : '-1'}>
+            <span class="visually-hidden">{e.label}</span>
+            {e.kind === 'career' && <CareerSleeve record={e.record} variant="mobile" spin />}
+            {e.kind === 'experiment' && <WhiteSleeve record={e.record} variant="mobile" />}
+            {e.kind === 'insert' && <InsertCard genre={e.genre} />}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="mcrate__caption">
+    <p class="mcap">
+      <span class="mcap__name" data-cap-name>{current.name}</span>
+      <span class="mcap__meta" data-cap-meta>{current.meta}</span>
+    </p>
+    <a class="mcap__open" href={current.href} data-cap-open>Open<span class="visually-hidden" data-cap-sr> {current.name}</span><span aria-hidden="true">&nbsp;→</span></a>
+  </div>
+
+  <div class="mlip on-dark">
+    <span class="mlip__flip">
+      <button type="button" class="mlip__arrow" data-flip="-1"><span aria-hidden="true">←</span><span class="visually-hidden">Previous record</span></button>
+      <span aria-hidden="true">swipe to flip</span>
+      <button type="button" class="mlip__arrow" data-flip="1"><span aria-hidden="true">→</span><span class="visually-hidden">Next record</span></button>
+    </span>
+    <a class="mlip__index" href="/index/">Plain index</a>
+    {previewBranch && <span class="mlip__test" aria-hidden="true">test pressing · {previewBranch}</span>}
+    <Grain tone="dark" />
+  </div>
+</section>
+
+<style>
+  .mcrate {
+    --w: min(calc(100vw - 72px), 420px);
+    --w-small: calc(var(--w) * 198 / 318);
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .mcrate__tabs {
+    display: flex;
+    gap: 4px;
+    margin: 0 16px;
+    font: 700 15px var(--f-display);
+    font-stretch: 80%;
+  }
+  .mtab {
+    height: 44px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    background: var(--card-dark);
+    color: var(--tab-dark-text);
+    border-radius: var(--r-tab);
+    white-space: nowrap;
+  }
+  .mtab[aria-pressed='true'] {
+    background: var(--card);
+    color: var(--ink);
+  }
+  .mcrate__joiner {
+    height: 6px;
+    margin: 0 16px;
+    background: var(--card);
+  }
+
+  .mcrate__stack {
+    position: relative;
+    margin: 0;
+    padding-top: 66px;
+    touch-action: pan-y;
+  }
+  .mitem {
+    width: var(--w);
+    margin: 0 auto;
+  }
+  .mitem--small {
+    width: var(--w-small);
+  }
+  .mitem__link {
+    display: block;
+  }
+  .mitem__link:hover {
+    text-decoration: none;
+  }
+  .mitem[data-state='hidden'] {
+    display: none;
+  }
+  .mitem[data-state='pulled'] {
+    position: relative;
+    z-index: 4;
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.35);
+  }
+  .mitem[data-state^='behind'] {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 60px;
+    overflow: hidden;
+  }
+  .mitem[data-state='behind-3'] {
+    top: 6px;
+    z-index: 1;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.15);
+  }
+  .mitem[data-state='behind-2'] {
+    top: 24px;
+    z-index: 2;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.18);
+  }
+  .mitem[data-state='behind-1'] {
+    top: 42px;
+    z-index: 3;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.22);
+  }
+  .mitem.is-entering {
+    animation: mitem-in 260ms var(--ease-lift);
+  }
+  @keyframes mitem-in {
+    from {
+      transform: translateY(24px);
+    }
+  }
+
+  .mitem:not([data-state='pulled']) :global(.sleeve__front),
+  .mitem:not([data-state='pulled']) :global(.front-only) {
+    display: none;
+  }
+  .mitem:not([data-state='pulled']) :global(.sleeve__spine) {
+    display: block;
+  }
+
+  .mcrate__caption {
+    width: var(--w);
+    margin: 16px auto 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .mcap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .mcap__name {
+    font: 700 16px/1.25 var(--f-display);
+  }
+  .mcap__meta {
+    font: 12px var(--f-mono);
+    color: var(--muted);
+  }
+  .mcap__open {
+    flex: none;
+    height: 44px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    background: var(--ink);
+    color: var(--paper);
+    font: 600 15px var(--f-display);
+  }
+  .mcap__open:focus-visible {
+    outline-color: var(--ink);
+  }
+
+  .mlip {
+    position: relative;
+    margin-top: auto;
+    height: 86px;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--ink);
+    color: var(--paper);
+    font: 12px var(--f-mono);
+  }
+  .mlip__flip {
+    display: flex;
+    align-items: center;
+  }
+  .mlip__arrow {
+    width: 44px;
+    height: 44px;
+    margin: 0 -12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 12px var(--f-mono);
+    color: var(--paper);
+  }
+  .mlip__arrow:first-child {
+    margin-right: -10px;
+  }
+  .mlip__arrow:last-child {
+    margin-left: -10px;
+  }
+  .mlip__index {
+    padding: 15px 0;
+    text-decoration: underline;
+  }
+  .mlip__test {
+    position: absolute;
+    left: 24px;
+    top: 8px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--on-dark-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mitem.is-entering {
+      animation: none;
+    }
+  }
+</style>

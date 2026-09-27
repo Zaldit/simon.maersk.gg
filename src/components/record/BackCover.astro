@@ -1,0 +1,198 @@
+---
+/**
+ * Back cover (frame 1d): tracklist per side, then the recording credits and a
+ * round logo stamp. The empty side is decorative. Designed at 540; scales with
+ * its width (--u).
+ */
+import LogoMark from '../LogoMark.astro';
+import Grain from '../Grain.astro';
+import { site } from '../../site';
+import { yearsCompact, yearsLong } from '../../lib/format';
+import { sideTitle, type Career } from '../../lib/records';
+
+interface Props {
+  record: Career;
+}
+const { record } = Astro.props;
+const d = record.data;
+---
+
+<div class="back on-dark">
+  <div class="back__in">
+  <div class="back__head">
+    <span class="back__cat" aria-hidden="true">{d.cat}</span>
+    <span class="back__when">{d.company} · {yearsLong(d.years)}</span>
+  </div>
+
+  <h2 class="visually-hidden">Tracklist</h2>
+  <div class="back__sides">
+    {
+      d.sides.map((s) =>
+        s.status === 'empty' ? (
+          <div class="side" aria-hidden="true">
+            <p class="side__h">
+              {s.side} · <span class="side__empty">Not written yet</span>
+            </p>
+            <span class="muted">—</span>
+          </div>
+        ) : (
+          <div class="side">
+            <h3 class="side__h">
+              <span aria-hidden="true">{s.side} · </span>
+              {sideTitle(s)}{' '}
+              {s.years && s.status !== 'in-progress' && <span class="side__yrs">{yearsCompact(s.years)}</span>}
+            </h3>
+            {s.status === 'in-progress' && (
+              <p class="side__tape">
+                <span>in progress</span>
+              </p>
+            )}
+            <ul class="plain-list" role="list">
+              {s.tracks.map((t) => (
+                <li>
+                  <span aria-hidden="true">{t.id} </span>
+                  {t.title}
+                  {t.feat.length > 0 && (
+                    <>
+                      <br />
+                      <span class="muted feat">feat. {t.feat.join(', ')}</span>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ),
+      )
+    }
+  </div>
+
+  <div class="back__credits">
+    <p class="credits">
+      <b>Recording credits</b><br />
+      {site.credits}<br />
+      <a href="/index/#pressing-history">Pressing history</a>
+    </p>
+    <span class="round-stamp" aria-hidden="true"><LogoMark size={24} border={2} tone="paper" /></span>
+  </div>
+  </div>
+  <Grain tone="dark" />
+</div>
+
+<style>
+  /*
+   * The container carries no padding: cqw resolves against its content box.
+   * Type scales with the cover but never below a legible floor; on small
+   * screens the back may then grow taller than square (aspect-ratio acts as a
+   * minimum while overflow is visible).
+   */
+  .back {
+    --u: calc(100cqw / 540);
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    container-type: inline-size;
+    background: var(--back-sleeve);
+    color: var(--paper);
+  }
+  .back__in {
+    min-height: 100cqw;
+    display: flex;
+    flex-direction: column;
+    gap: calc(18 * var(--u));
+    padding: calc(34 * var(--u)) calc(34 * var(--u)) calc(28 * var(--u));
+  }
+  .back__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .back__cat {
+    font: 700 max(calc(22 * var(--u)), 18px) var(--f-mono);
+  }
+  .back__when {
+    font: max(calc(11 * var(--u)), 10px) var(--f-mono);
+    color: var(--on-dark-muted);
+  }
+  .back__sides {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc(18 * var(--u)) calc(26 * var(--u));
+    font: max(calc(11.5 * var(--u)), 10.5px) / 1.55 var(--f-mono);
+  }
+  .side__h {
+    margin: 0 0 calc(6 * var(--u));
+    font: 700 max(calc(15 * var(--u)), 13px) / 1.3 var(--f-display);
+    font-stretch: 78%;
+  }
+  .side__yrs {
+    margin-left: 6px;
+    font: 400 max(calc(11 * var(--u)), 10px) var(--f-mono);
+    color: var(--on-dark-muted);
+  }
+  .side__empty {
+    font-weight: 400;
+    color: var(--on-dark-muted);
+  }
+  .side__tape {
+    display: flex;
+    margin: calc(-2 * var(--u)) 0 calc(6 * var(--u));
+  }
+  .side__tape span {
+    padding: 1px 6px;
+    background: var(--accent);
+    color: var(--ink);
+    font: 600 max(calc(10 * var(--u)), 9.5px) var(--f-mono);
+    transform: rotate(-3deg);
+  }
+  .muted {
+    color: var(--on-dark-muted);
+  }
+  .back__credits {
+    position: relative;
+    z-index: 1;
+    margin-top: auto;
+    padding-top: calc(14 * var(--u));
+    border-top: 1px solid var(--rule-on-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+  }
+  .credits {
+    max-width: max(calc(340 * var(--u)), 220px);
+    font: max(calc(10 * var(--u)), 10px) / 1.6 var(--f-mono);
+    color: var(--on-dark-soft);
+  }
+  .credits b {
+    color: var(--paper);
+  }
+  .credits a {
+    position: relative;
+    color: var(--paper);
+    text-decoration: underline;
+  }
+  /* 44px hit area around the small print link */
+  .credits a::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+  .round-stamp {
+    flex: none;
+    width: calc(62 * var(--u));
+    height: calc(62 * var(--u));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: calc(3 * var(--u)) solid var(--paper);
+    border-radius: 50%;
+    opacity: 0.8;
+    transform: rotate(-8deg);
+  }
+</style>

@@ -1,0 +1,218 @@
+---
+/**
+ * /records/[cat] — record inspection (frame 1d): front and back side by side.
+ * "Turn it over" flips both sleeves on their Y axis (400ms), a cross-fade
+ * under reduced motion. State: record.face (front | back).
+ */
+import Base from '../../../layouts/Base.astro';
+import Header from '../../../components/Header.astro';
+import CareerSleeve from '../../../components/sleeve/CareerSleeve.astro';
+import BackCover from '../../../components/record/BackCover.astro';
+import { companyCaption, featuredSide, getRecords, sideHref, slug, type Career } from '../../../lib/records';
+
+export async function getStaticPaths() {
+  const { career } = await getRecords();
+  return career.map((record) => ({ params: { cat: slug(record.data.cat) }, props: { record, career } }));
+}
+
+interface Props {
+  record: Career;
+  career: Career[];
+}
+const { record, career } = Astro.props;
+const d = record.data;
+const company = companyCaption(record, career);
+const open = sideHref(record, featuredSide(record).side);
+---
+
+<Base title={`${company} — ${d.cat}`} description={d.summary}>
+  <div class="page">
+    <Header links={[{ href: '/career/', label: '← Career' }, { href: '/index/', label: 'Index' }]} />
+    <main id="main" class="inspect" data-flip data-face="front">
+      <div class="cards">
+        {
+          (['front', 'back'] as const).map((up) => (
+            <figure class:list={['card', `card--${up}-up`]}>
+              <div class="card__inner">
+                <div class="face face--front" data-face-of="front" inert={up !== 'front'}>
+                  <CareerSleeve record={record} variant="inspect" spin />
+                </div>
+                <div class="face face--back" data-face-of="back" inert={up !== 'back'}>
+                  <BackCover record={record} />
+                </div>
+              </div>
+              <figcaption class="card__label" aria-hidden="true">
+                <span class="when-front">{up === 'front' ? 'Front' : 'Back'}</span>
+                <span class="when-back">{up === 'front' ? 'Back' : 'Front'}</span>
+              </figcaption>
+            </figure>
+          ))
+        }
+      </div>
+
+      <div class="side-col">
+        <span class="side-col__cat" aria-hidden="true">{d.cat}</span>
+        <h1 class="side-col__co">{company}</h1>
+        <p class="side-col__sum">{d.summary}</p>
+        <a class="open" href={open}>Open the record <span aria-hidden="true">→</span></a>
+        <button type="button" class="turn" data-turn hidden aria-pressed="false">Turn it over</button>
+      </div>
+    </main>
+  </div>
+</Base>
+
+<script>
+  import '../../../scripts/flip.ts';
+</script>
+
+<style>
+  .page {
+    position: relative;
+    max-width: var(--frame);
+    margin-inline: auto;
+  }
+  .inspect {
+    display: grid;
+    grid-template-columns: minmax(0, 1104px) 188px;
+    column-gap: 36px;
+    align-items: start;
+    padding: 150px var(--gutter) 80px;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 540px));
+    column-gap: 24px;
+  }
+  .card {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  /* Faces share one grid cell, so a taller back (small screens) sizes the card. */
+  .card__inner {
+    position: relative;
+    display: grid;
+    align-items: start;
+    transform-style: preserve-3d;
+    transition: transform 400ms var(--ease-lift);
+  }
+  .face {
+    grid-area: 1 / 1;
+    position: relative;
+    box-shadow: var(--sh-inspect);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .face--back {
+    transform: rotateY(180deg);
+  }
+  /* A card whose back is up starts turned over. */
+  .card--back-up .card__inner {
+    transform: rotateY(180deg);
+  }
+  .inspect[data-face='back'] .card--front-up .card__inner {
+    transform: rotateY(180deg);
+  }
+  .inspect[data-face='back'] .card--back-up .card__inner {
+    transform: none;
+  }
+  .card__label {
+    font: 12px var(--f-mono);
+    color: var(--muted);
+  }
+  .when-back,
+  .inspect[data-face='back'] .when-front {
+    display: none;
+  }
+  .inspect[data-face='back'] .when-back {
+    display: inline;
+  }
+
+  .side-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .side-col__cat {
+    font: 700 28px var(--f-mono);
+    line-height: 1.3;
+  }
+  .side-col__co {
+    font: 700 20px/1.1 var(--f-display);
+  }
+  .side-col__sum {
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+  .open {
+    align-self: stretch;
+    margin-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--ink);
+    color: var(--paper);
+    font: 600 15px/1.2 var(--f-display);
+  }
+  .turn {
+    min-height: 44px;
+    margin-top: -12px;
+    font: 12px var(--f-mono);
+    text-decoration: underline;
+  }
+
+  /* Reduced motion: cross-fade the faces instead of turning the sleeve. */
+  @media (prefers-reduced-motion: reduce) {
+    .card__inner,
+    .card--back-up .card__inner,
+    .inspect[data-face='back'] .card--front-up .card__inner {
+      transform: none;
+      transition: none;
+    }
+    .face,
+    .face--back {
+      transform: none;
+      backface-visibility: visible;
+      transition: opacity 250ms linear;
+    }
+    .card--front-up .face--back,
+    .card--back-up .face--front,
+    .inspect[data-face='back'] .card--front-up .face--front,
+    .inspect[data-face='back'] .card--back-up .face--back {
+      opacity: 0;
+    }
+    .inspect[data-face='back'] .card--front-up .face--back,
+    .inspect[data-face='back'] .card--back-up .face--front {
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 1279px) {
+    .inspect {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 40px;
+    }
+    .side-col {
+      grid-row: 1;
+      max-width: 540px;
+    }
+    .open {
+      align-self: flex-start;
+      gap: 24px;
+    }
+  }
+  @media (max-width: 899px) {
+    .cards {
+      grid-template-columns: minmax(0, 540px);
+      row-gap: 32px;
+    }
+  }
+  @media (max-width: 767px) {
+    .inspect {
+      padding-top: 110px;
+    }
+  }
+</style>

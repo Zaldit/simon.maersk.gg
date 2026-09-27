@@ -1,0 +1,164 @@
+---
+/**
+ * White-label sleeve for experiments (frames 1b, 1f): no art, a die-cut hole,
+ * a stamped catalog number, a handwritten title and the experiment sticker.
+ * The front layout is designed at 400px and scales with the sleeve (--u).
+ * In the crate it also renders the spine view (stamped number on the edge).
+ * Decorative (aria-hidden).
+ */
+import Grain from '../Grain.astro';
+import { seedOf, type Experiment } from '../../lib/records';
+
+interface Props {
+  record: Experiment;
+  variant: 'crate' | 'page' | 'mobile';
+  class?: string;
+}
+
+const { record, variant, class: className } = Astro.props;
+const d = record.data;
+// Stamped by hand: never twice the same angle.
+const tilt = ((seedOf(d.cat) * 2) % 5) - 2;
+const inCrate = variant !== 'page';
+---
+
+<div class:list={['wsleeve', `wsleeve--${variant}`, className]} style={`--tilt:${tilt}deg`} aria-hidden="true">
+  <div class="wsleeve__face">
+    <span class="hole"></span>
+    {
+      inCrate && (
+        <div class="sleeve__spine">
+          {variant === 'crate' ? (
+            <>
+              <span class="spine-stamp">{d.cat}</span>
+              <span class="spine-hand">{d.handTitle}</span>
+            </>
+          ) : (
+            <span class="spine-h">{d.cat}</span>
+          )}
+        </div>
+      )
+    }
+    <div class="sleeve__front">
+      <span class="stamp">{d.cat}<span class="tex tex--ink"></span></span>
+      <span class="hand">{d.handTitle}</span>
+      {
+        d.sticker?.kind === 'experiment' && (
+          <span class="exp-sticker">
+            <span class="exp-sticker__ring">
+              {d.sticker.text ?? 'Experiment'}
+              <span class="tex tex--ink" />
+            </span>
+          </span>
+        )
+      }
+    </div>
+    <Grain tone="light" />
+  </div>
+</div>
+
+<style>
+  .wsleeve {
+    --u: calc(100cqw / 400);
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    container-type: inline-size;
+    color: var(--ink);
+  }
+  .wsleeve__face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--white-label);
+  }
+  .hole {
+    position: absolute;
+    left: 33%;
+    top: 33%;
+    width: 34%;
+    height: 34%;
+    border-radius: 50%;
+    background: var(--ink);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+  }
+  .sleeve__front,
+  .sleeve__spine {
+    position: absolute;
+    inset: 0;
+  }
+  .sleeve__spine {
+    display: none;
+  }
+  .sleeve__front > span,
+  .sleeve__spine > span {
+    position: absolute;
+  }
+
+  /* Spine view (crate) */
+  .spine-stamp {
+    left: 12px;
+    top: 14px;
+    padding: 3px 5px;
+    border: 2px solid var(--ink);
+    writing-mode: vertical-rl;
+    font: 700 12px var(--f-mono);
+    opacity: 0.85;
+    transform: rotate(var(--tilt));
+  }
+  .spine-hand {
+    left: 30px;
+    top: 150px;
+    font: 700 26px var(--f-hand);
+    white-space: nowrap;
+    transform: rotate(-4deg);
+  }
+  .spine-h {
+    left: 12px;
+    top: 8px;
+    font: 600 11px var(--f-mono);
+  }
+
+  /* Front (designed at 400) */
+  .stamp {
+    left: calc(28 * var(--u));
+    top: calc(30 * var(--u));
+    padding: calc(4 * var(--u)) calc(10 * var(--u));
+    border: calc(3 * var(--u)) solid var(--ink);
+    font: 700 calc(24 * var(--u)) var(--f-mono);
+    opacity: 0.85;
+    transform: rotate(-4deg);
+  }
+  .hand {
+    left: calc(34 * var(--u));
+    bottom: calc(34 * var(--u));
+    max-width: calc(230 * var(--u));
+    font: 700 calc(40 * var(--u)) / 0.95 var(--f-hand);
+    transform: rotate(-3deg);
+  }
+  .exp-sticker {
+    right: calc(26 * var(--u));
+    bottom: calc(30 * var(--u));
+    width: calc(90 * var(--u));
+    height: calc(90 * var(--u));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: var(--sh-sticker);
+    transform: rotate(7deg);
+  }
+  .exp-sticker__ring {
+    position: relative;
+    width: calc(76 * var(--u));
+    height: calc(76 * var(--u));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: calc(2 * var(--u)) solid var(--accent);
+    font: 800 calc(12 * var(--u)) var(--f-display);
+    font-stretch: 75%;
+  }
+</style>

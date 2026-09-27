@@ -1,0 +1,157 @@
+---
+/**
+ * One accent, three treatments = three record types (README "Stickers").
+ *   career      solid accent circle, ink text
+ *   experiment  white circle with a stamped accent ring, ink text
+ *   playing     black circle, accent text
+ * Specials: return (small accent circle), progress (accent tape),
+ * headline (accent rectangle with white speckle), dot (plain accent dot).
+ * Always slightly crooked, never at 0°.
+ */
+import Grain from './Grain.astro';
+
+interface Props {
+  kind: 'career' | 'experiment' | 'playing' | 'return' | 'progress' | 'headline' | 'dot';
+  /** Diameter for circles; width for the headline rectangle. */
+  size?: number;
+  /** Experiment only: diameter of the accent ring. */
+  ring?: number;
+  /** Experiment only: ring stroke. */
+  ringWidth?: number;
+  rotate?: number;
+  /** Font sizes for the two text lines, as CSS lengths. */
+  big?: string;
+  small?: string;
+  class?: string;
+  style?: string;
+  decorative?: boolean;
+}
+
+const {
+  kind,
+  size,
+  ring,
+  ringWidth = 3,
+  rotate = kind === 'return' ? 12 : kind === 'progress' ? -2 : 4,
+  big,
+  small,
+  class: className,
+  style = '',
+  decorative = false,
+} = Astro.props;
+
+const vars = [
+  size !== undefined && `--size:${size}px`,
+  ring !== undefined && `--ring:${ring}px`,
+  `--ring-w:${ringWidth}px`,
+  `--rot:${rotate}deg`,
+  big && `--big:${big}`,
+  small && `--small:${small}`,
+]
+  .filter(Boolean)
+  .join(';');
+---
+
+<span
+  class:list={['sticker', `sticker--${kind}`, className]}
+  style={`${vars};${style}`}
+  aria-hidden={decorative ? 'true' : undefined}>
+  {
+    kind === 'experiment' ? (
+      <span class="sticker__ring">
+        <slot />
+        <Grain tone="ink" />
+      </span>
+    ) : (
+      <slot />
+    )
+  }
+  {(kind === 'career' || kind === 'headline') && <Grain tone="ink-white" />}
+</span>
+
+<style>
+  .sticker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--ink);
+    text-align: center;
+    transform: rotate(var(--rot));
+    line-height: 1;
+  }
+  .sticker--career,
+  .sticker--experiment,
+  .sticker--playing,
+  .sticker--return,
+  .sticker--dot {
+    flex: none;
+    width: var(--size, 132px);
+    height: var(--size, 132px);
+    border-radius: 50%;
+  }
+  .sticker--career,
+  .sticker--return,
+  .sticker--dot,
+  .sticker--progress,
+  .sticker--headline {
+    background: var(--accent);
+  }
+  .sticker--career,
+  .sticker--experiment,
+  .sticker--playing,
+  .sticker--headline {
+    box-shadow: var(--sh-sticker);
+  }
+  .sticker--experiment {
+    background: var(--sticker-white);
+  }
+  .sticker__ring {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: var(--ring, 108px);
+    height: var(--ring, 108px);
+    border-radius: 50%;
+    border: var(--ring-w) solid var(--accent);
+  }
+  .sticker--playing {
+    background: var(--ink);
+    color: var(--accent);
+    gap: 2px;
+  }
+  .sticker--progress {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 5px 12px;
+    font: 600 var(--small, 12px) var(--f-mono);
+  }
+  .sticker--headline {
+    box-sizing: content-box;
+    width: var(--size, 196px);
+    align-items: stretch;
+    text-align: left;
+    gap: 6px;
+    padding: 14px 16px;
+    border-radius: var(--r-sticker);
+  }
+
+  .sticker :global(.sticker__big) {
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: var(--big, 20px);
+    line-height: 1.02;
+  }
+  .sticker :global(.sticker__small) {
+    font-family: var(--f-mono);
+    font-weight: 600;
+    font-size: var(--small, 11px);
+    line-height: 1.2;
+  }
+</style>

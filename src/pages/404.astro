@@ -1,0 +1,41 @@
+---
+/** Cloudflare Pages serves this for unknown paths (without it, it falls back to /). */
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+---
+
+<Base title="Not found">
+  <div class="page">
+    <Header links={[{ href: '/index/', label: 'Index' }]} />
+    <main id="main" class="nf">
+      <h1 class="nf__title">Nothing in the crate here.</h1>
+      <p class="nf__sub">This page doesn't exist. <a href="/">Back to the crate</a> or <a href="/index/">see everything as a list</a>.</p>
+    </main>
+  </div>
+</Base>
+
+<style>
+  .page {
+    position: relative;
+    max-width: var(--frame);
+    margin-inline: auto;
+  }
+  .nf {
+    padding: 160px var(--gutter) 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .nf__title {
+    font: 700 50px/1.02 var(--f-display);
+    font-stretch: 78%;
+  }
+  .nf__sub {
+    font-size: 17px;
+    color: var(--muted);
+  }
+  .nf__sub a {
+    color: var(--ink);
+    text-decoration: underline;
+  }
+</style>

@@ -1,0 +1,82 @@
+---
+/**
+ * The printed chart insert in the crate (frame 1b): the front genre's mini
+ * chart and first three tracks, with a black "×n" sticker for its track count.
+ * Designed at 250×340; scales with its width (--u). Decorative (aria-hidden).
+ */
+import Grain from '../Grain.astro';
+import PlayingChart from '../svg/PlayingChart.astro';
+import type { Playing } from '../../lib/records';
+
+interface Props {
+  genre: Playing;
+  class?: string;
+}
+
+const { genre, class: className } = Astro.props;
+const tracks = genre.data.tracks;
+---
+
+<div class:list={['insert', className]} aria-hidden="true">
+  <div class="insert__band">Currently playing</div>
+  <div class="insert__chart">
+    <PlayingChart tracks={tracks.map((t) => ({ bpm: t.bpm, energy: t.energy }))} summary="" />
+  </div>
+  <ol class="insert__tracks">
+    {
+      tracks.slice(0, 3).map((t, i) => (
+        <li>
+          {String(i + 1).padStart(2, '0')} {t.artist} – {t.title}
+        </li>
+      ))
+    }
+  </ol>
+  <span class="insert__count">×{tracks.length}</span>
+  <Grain tone="light" />
+</div>
+
+<style>
+  .insert {
+    --u: calc(100cqw / 250);
+    position: relative;
+    width: 100%;
+    aspect-ratio: 250 / 340;
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    background: var(--insert-paper);
+  }
+  .insert__band {
+    background: var(--ink);
+    color: var(--paper);
+    padding: calc(12 * var(--u)) calc(14 * var(--u));
+    font: 800 calc(20 * var(--u)) / 1.2 var(--f-display);
+    font-stretch: 75%;
+  }
+  .insert__chart {
+    height: calc(110 * var(--u));
+    padding: calc(12 * var(--u)) calc(8 * var(--u)) 0;
+  }
+  .insert__tracks {
+    list-style: none;
+    margin: 0;
+    padding: calc(6 * var(--u)) calc(14 * var(--u));
+    font: calc(10 * var(--u)) / 1.7 var(--f-mono);
+    color: var(--muted);
+  }
+  .insert__count {
+    position: absolute;
+    right: calc(-10 * var(--u));
+    top: calc(40 * var(--u));
+    width: calc(54 * var(--u));
+    height: calc(54 * var(--u));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--accent);
+    font: 700 calc(12 * var(--u)) var(--f-mono);
+    transform: rotate(-8deg);
+  }
+</style>

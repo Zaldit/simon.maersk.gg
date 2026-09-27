@@ -1,0 +1,36 @@
+---
+/**
+ * The half-filled, half-open mark: "using the tools / building them".
+ * A circle with a border whose left half is filled.
+ */
+interface Props {
+  size?: number;
+  border?: number;
+  tone?: 'ink' | 'paper';
+  class?: string;
+}
+const { size = 20, border = 2, tone = 'ink', class: className } = Astro.props;
+---
+
+<span
+  class:list={['mark', `mark--${tone}`, className]}
+  style={`--size:${size}px;--border:${border}px`}
+  aria-hidden="true"></span>
+
+<style>
+  .mark {
+    flex: none;
+    display: block;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    border: var(--border) solid var(--c);
+    background: linear-gradient(90deg, var(--c) 50%, transparent 50%);
+  }
+  .mark--ink {
+    --c: var(--ink);
+  }
+  .mark--paper {
+    --c: var(--paper);
+  }
+</style>

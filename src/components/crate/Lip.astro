@@ -1,0 +1,77 @@
+---
+/**
+ * The crate lip (frame 1b): a black band over the bottom of the records with
+ * the label stamp and a way out to the plain index. On Cloudflare Pages preview
+ * deploys it also carries a tiny "test pressing · <branch>" stamp.
+ */
+import LogoMark from '../LogoMark.astro';
+import Grain from '../Grain.astro';
+import { site } from '../../site';
+import { previewBranch } from '../../lib/build';
+---
+
+<div class="lip on-dark">
+  <span class="lip__stamp" aria-hidden="true">
+    <LogoMark size={18} border={2} tone="paper" />
+    <span class="lip__word">{site.label}</span>
+    <span class="lip__crate">CRATE 01</span>
+  </span>
+  {previewBranch && <span class="lip__test" aria-hidden="true">test pressing · {previewBranch}</span>}
+  <a class="lip__index" href="/index/">Prefer a list? Plain index →</a>
+  <Grain tone="dark" />
+</div>
+
+<style>
+  .lip {
+    position: absolute;
+    z-index: 4;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 120px;
+    padding: 0 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .lip__stamp {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    border: 3px solid var(--paper);
+    opacity: 0.85;
+    transform: rotate(-1.5deg);
+  }
+  .lip__word {
+    font: 850 22px/1 var(--f-display);
+    font-stretch: 72%;
+  }
+  .lip__crate {
+    font: 11px var(--f-mono);
+    letter-spacing: 0.2em;
+  }
+  .lip__test {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    padding: 3px 7px;
+    border: 1px solid var(--on-dark-muted);
+    color: var(--on-dark-muted);
+    font: 10px var(--f-mono);
+    letter-spacing: 0.08em;
+    opacity: 0.8;
+    transform: translate(-50%, -50%) rotate(2deg);
+  }
+  .lip__index {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font: 14px var(--f-mono);
+  }
+</style>

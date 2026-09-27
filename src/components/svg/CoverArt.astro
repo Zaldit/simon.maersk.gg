@@ -1,0 +1,139 @@
+---
+/**
+ * Generative cover art (viewBox 0 0 100 100). The same kind of series feeds
+ * every cover; only the drawing rule changes with the stage. That drift is the
+ * career story told visually (README "Cover art").
+ *
+ * 0 office report · 1 bars · 2 halftone field · 3 radial, misregistered
+ */
+import { fitSeries, r2 } from '../../lib/series';
+
+export type CoverStage = 0 | 1 | 2 | 3;
+
+interface Props {
+  stage: CoverStage;
+  series: readonly number[];
+  /** Phase seed for the halftone field; the record index. */
+  seed: number;
+  class?: string;
+}
+
+const { stage, series, seed, class: className } = Astro.props;
+
+const INK = '#131211';
+const PAPER = '#ebe6db';
+
+// Stage 0: 5 hairline gridlines, a 24-point polyline, a baseline.
+const s0 = stage === 0 ? fitSeries(series, 24) : [];
+const s0Points = s0.map((v, i) => `${r2(12 + (i * 76) / 23)},${r2(84 - v * 26)}`).join(' ');
+
+// Stage 1: 18 bars, 2.6 wide, height = value × 46.
+const s1 = stage === 1 ? fitSeries(series, 18) : [];
+const s1Bars = s1
+  .map((v, i) => `M${14 + i * 4} ${r2(80 - v * 46)}h2.6v${r2(v * 46)}h-2.6z`)
+  .join('');
+
+// Stage 2: 14×14 dot grid, step 6.9, r = .3 + v × 2.7, skipped within r 21 (die-cut).
+const s2: { cx: number; cy: number; r: number }[] = [];
+if (stage === 2) {
+  const d = fitSeries(series, 120);
+  for (let y = 0; y < 14; y++) {
+    for (let x = 0; x < 14; x++) {
+      const cx = 5 + x * 6.9;
+      const cy = 5 + y * 6.9;
+      const dist = Math.hypot(cx - 50, cy - 50);
+      if (dist < 21) continue;
+      const v = d[(x * 3 + y * 7) % d.length]! * (0.35 + 0.65 * Math.abs(Math.sin(dist * 0.11 + seed)));
+      s2.push({ cx: r2(cx), cy: r2(cy), r: r2(0.3 + v * 2.7) });
+    }
+  }
+}
+
+// Stage 3: 120 radial lines from r 21 to 21 + v × 27, plus a grey copy offset (.8, .5).
+let s3Paper = '';
+let s3Ghost = '';
+if (stage === 3) {
+  const d = fitSeries(series, 120);
+  const rays = (dx: number, dy: number) =>
+    d
+      .map((v, i) => {
+        const a = (i / d.length) * Math.PI * 2;
+        const r0 = 21;
+        const r1 = 21 + v * 27;
+        return `M${r2(50 + dx + Math.cos(a) * r0)} ${r2(50 + dy + Math.sin(a) * r0)}L${r2(50 + dx + Math.cos(a) * r1)} ${r2(50 + dy + Math.sin(a) * r1)}`;
+      })
+      .join('');
+  s3Ghost = rays(0.8, 0.5);
+  s3Paper = rays(0, 0);
+}
+const cropMarks = [
+  [6, 6],
+  [94, 6],
+  [6, 94],
+  [94, 94],
+]
+  .map(([x, y]) => `M${x! - 2} ${y}H${x! + 2}M${x} ${y! - 2}V${y! + 2}`)
+  .join('');
+---
+
+<svg
+  class:list={['cover-art', className]}
+  viewBox="0 0 100 100"
+  preserveAspectRatio="xMidYMin slice"
+  aria-hidden="true"
+  focusable="false">
+  {
+    stage === 0 && (
+      <>
+        <rect width="100" height="100" fill="#f3f0e8" />
+        {[0, 1, 2, 3, 4].map((i) => (
+          <line x1="12" x2="88" y1={56 + i * 7} y2={56 + i * 7} stroke="#cfc9bd" stroke-width=".25" />
+        ))}
+        <polyline points={s0Points} fill="none" stroke={INK} stroke-width=".6" />
+        <line x1="12" x2="88" y1="84" y2="84" stroke={INK} stroke-width=".35" />
+      </>
+    )
+  }
+  {
+    stage === 1 && (
+      <>
+        <rect width="100" height="100" fill={PAPER} />
+        <path d={s1Bars} fill={INK} />
+        <line x1="10" x2="90" y1="82" y2="82" stroke={INK} stroke-width=".5" />
+      </>
+    )
+  }
+  {
+    stage === 2 && (
+      <>
+        <rect width="100" height="100" fill={INK} />
+        <g fill={PAPER}>
+          {s2.map((c) => (
+            <circle cx={c.cx} cy={c.cy} r={c.r} />
+          ))}
+        </g>
+      </>
+    )
+  }
+  {
+    stage === 3 && (
+      <>
+        <rect width="100" height="100" fill={INK} />
+        <path d={s3Ghost} stroke="#5f5b55" stroke-width=".5" />
+        <path d={s3Paper} stroke={PAPER} stroke-width=".42" />
+        <circle cx="50" cy="50" r="19.5" fill="none" stroke={PAPER} stroke-width=".2" />
+        <path d={cropMarks} stroke={PAPER} stroke-width=".25" />
+      </>
+    )
+  }
+</svg>
+
+<style>
+  .cover-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+  }
+</style>

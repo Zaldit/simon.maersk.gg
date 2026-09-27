@@ -1,0 +1,33 @@
+---
+import '../styles/global.css';
+import { textureCss } from '../lib/texture';
+import { site } from '../site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Photocopy grain over the whole page. The plain index has none. */
+  grain?: boolean;
+  /** Background override, e.g. the index paper. */
+  background?: string;
+}
+const { title, description = site.description, grain = true, background } = Astro.props;
+const fullTitle = title ? `${title} — ${site.label}` : site.label;
+---
+
+<!doctype html>
+<html lang="en" style={background ? `background:${background}` : undefined}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#ebe6db" />
+    <style is:inline set:html={textureCss}></style>
+  </head>
+  <body class:list={{ 'has-grain': grain }} style={background ? `background:${background}` : undefined}>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <slot />
+  </body>
+</html>

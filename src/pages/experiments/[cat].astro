@@ -1,0 +1,183 @@
+---
+/**
+ * /experiments/[cat] — a white label opened to its data story (frame 1f).
+ * The intro is the record file's MDX body; the chart and findings come from
+ * its frontmatter. The white-label disc turns once every 30s.
+ */
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import WhiteSleeve from '../../components/sleeve/WhiteSleeve.astro';
+import Disc from '../../components/svg/Disc.astro';
+import ScatterChart from '../../components/svg/ScatterChart.astro';
+import { experimentEtch, experimentLabel, getRecords, slug, type Experiment } from '../../lib/records';
+
+export async function getStaticPaths() {
+  const { experiments } = await getRecords();
+  return experiments.map((record) => ({ params: { cat: slug(record.data.cat) }, props: { record } }));
+}
+
+interface Props {
+  record: Experiment;
+}
+const { record } = Astro.props;
+const d = record.data;
+const { Content } = await render(record);
+---
+
+<Base title={d.headline} description={d.headline}>
+  <div class="page">
+    <Header links={[{ href: '/', label: '← Crate' }, { href: '/index/', label: 'Index' }]} />
+    <main id="main" class="experiment">
+      <div class="deck" aria-hidden="true">
+        <div class="deck__disc">
+          <Disc label={experimentLabel(record)} trackCount={2} etch={experimentEtch()} spin={30} />
+        </div>
+        <div class="deck__sleeve">
+          <WhiteSleeve record={record} variant="page" />
+        </div>
+      </div>
+
+      <article class="story">
+        <p class="meta">
+          Experiment<span aria-hidden="true"> · {d.cat}</span>{d.note && ` · ${d.note}`}
+        </p>
+        <h1 class="title">{d.headline}</h1>
+        <div class="intro"><Content /></div>
+        {
+          d.chart && (
+            <div class="chart">
+              <ScatterChart points={d.chart.points} highlight={d.chart.highlight} summary={d.chart.summary} />
+            </div>
+          )
+        }
+        {
+          d.findings.length > 0 && (
+            <>
+              <h2 class="visually-hidden">Findings</h2>
+              <ol class="findings plain-list" role="list">
+                {d.findings.map((f, i) => (
+                  <li>
+                    <span class="findings__n" aria-hidden="true">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ol>
+            </>
+          )
+        }
+      </article>
+    </main>
+  </div>
+</Base>
+
+<script>
+  import '../../scripts/scatter.ts';
+</script>
+
+<style>
+  .page {
+    position: relative;
+    max-width: var(--frame);
+    margin-inline: auto;
+  }
+  .experiment {
+    --px: 1px;
+    display: grid;
+    grid-template-columns: 400px minmax(0, 864px);
+    column-gap: 64px;
+    align-items: start;
+    padding: 110px var(--gutter) 80px;
+  }
+  .deck {
+    position: relative;
+    height: calc(540 * var(--px));
+  }
+  .deck__disc {
+    position: absolute;
+    left: calc(94 * var(--px));
+    top: 0;
+    width: calc(300 * var(--px));
+    height: calc(300 * var(--px));
+  }
+  .deck__sleeve {
+    position: absolute;
+    left: 0;
+    top: calc(140 * var(--px));
+    width: calc(400 * var(--px));
+    box-shadow: 3px 6px 18px rgba(0, 0, 0, 0.2);
+  }
+
+  .story {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .meta {
+    font: 12px var(--f-mono);
+    color: var(--muted);
+  }
+  .title {
+    font: 750 46px/1 var(--f-display);
+    font-stretch: 76%;
+    letter-spacing: -0.01em;
+  }
+  .intro :global(p) {
+    max-width: 700px;
+    font-size: 17px;
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+  .intro :global(p + p) {
+    margin-top: 12px;
+  }
+  .chart {
+    height: 420px;
+    margin-top: 4px;
+  }
+  .findings {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .findings li {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .findings__n {
+    font: 12px var(--f-mono);
+    color: var(--faint);
+  }
+
+  @media (max-width: 1099px) {
+    .experiment {
+      --px: min(1px, calc((100vw - 48px) / 400));
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 32px;
+      padding-top: 100px;
+    }
+    .deck {
+      width: calc(400 * var(--px));
+    }
+  }
+  @media (max-width: 767px) {
+    .title {
+      font-size: 34px;
+    }
+    .chart {
+      height: auto;
+      aspect-ratio: 760 / 410;
+    }
+    .findings {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+  }
+</style>

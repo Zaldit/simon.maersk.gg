@@ -1,0 +1,214 @@
+---
+/**
+ * /career — the career records side by side (frame 1c). Record size grows
+ * with the career and the sleeve design drifts from office report to techno.
+ * Hovering a record slides its disc out another 24px.
+ */
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import CareerSleeve from '../components/sleeve/CareerSleeve.astro';
+import Disc from '../components/svg/Disc.astro';
+import { yearsShort, yearStart } from '../lib/format';
+import { careerHref, careerLabel, companyCaption, getRecords, realSides, roleLine } from '../lib/records';
+
+const { career } = await getRecords();
+
+const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+const count = career.length;
+const first = career[0];
+const last = career[career.length - 1];
+const heading = `${WORDS[count] ?? count} ${count === 1 ? 'job' : 'jobs'}, ${first ? yearStart(first.data.years) : ''} to ${last?.data.years.to ? last.data.years.to.slice(0, 4) : 'now'}.`;
+
+const groups = career.map((r, i) => {
+  const size = r.data.size;
+  const small = size === 'small';
+  const sleeve = small ? 165 : 260;
+  const disc = small ? 159 : 250;
+  const box = small ? 199 : size === 'double' ? 356 : 316;
+  // Sleeve shadows grow heavier for later records.
+  const k = Math.max(0, i - 1);
+  const shadow = `${2 + Math.min(k, 1)}px ${3 + Math.min(k, 1)}px ${8 + 2 * k}px rgba(0,0,0,${(0.2 + 0.075 * k).toFixed(3)})`;
+  const sides = realSides(r);
+  const discs =
+    size === 'double'
+      ? sides.slice(0, 2).map((s, j) => ({ label: careerLabel(r, s), tracks: s.tracks.length, right: j === 0 ? 46 : 0 })).reverse()
+      : [{ label: careerLabel(r), tracks: sides[0]?.tracks.length ?? 3, right: 0 }];
+  return { r, sleeve, disc, box, shadow, discs };
+});
+---
+
+<Base title="Career" description="Four jobs as four records: size grows with the career.">
+  <div class="page">
+    <Header links={[{ href: '/', label: '← Crate' }, { href: '/index/', label: 'Index' }]} />
+    <main id="main" class="career">
+      <div class="intro">
+        <p class="kicker"><span class="kicker__dot" aria-hidden="true"></span>Career · {count} records</p>
+        <h1 class="title">{heading}</h1>
+        <p class="lede">Each record is one role. The bigger the record, the bigger the chapter.</p>
+      </div>
+
+      <ol class="records plain-list" role="list">
+        {
+          groups.map(({ r, sleeve, disc, box, shadow, discs }) => (
+            <li class="group">
+              <a class="group__link" href={careerHref(r)}>
+                <span class="visual" style={`--box:${box};--sleeve:${sleeve};--disc:${disc};--shadow:${shadow}`}>
+                  {discs.map((d) => (
+                    <span class="visual__disc" style={`--right:${d.right}`}>
+                      <Disc label={d.label} trackCount={d.tracks} />
+                    </span>
+                  ))}
+                  <span class="visual__sleeve">
+                    <CareerSleeve record={r} variant="career" />
+                  </span>
+                </span>
+                <span class="caption">
+                  <span class="caption__cat" aria-hidden="true">
+                    {r.data.cat}
+                  </span>
+                  <span class="caption__co">{companyCaption(r, career)}</span>
+                  <span class="caption__role">{roleLine(r)}</span>
+                  <span class="caption__yrs">{yearsShort(r.data.years)}</span>
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </main>
+  </div>
+</Base>
+
+<style>
+  .page {
+    position: relative;
+    max-width: var(--frame);
+    margin-inline: auto;
+  }
+  .career {
+    --px: 1px;
+    min-height: max(100svh, 760px);
+    display: flex;
+    flex-direction: column;
+    padding: 124px var(--gutter) 120px;
+  }
+  .intro {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .kicker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 12px var(--f-mono);
+  }
+  .kicker__dot {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .title {
+    font: 700 44px/1 var(--f-display);
+    font-stretch: 78%;
+  }
+  .lede {
+    max-width: 560px;
+    font-size: 17px;
+    color: var(--muted);
+  }
+
+  .records {
+    margin: auto 0 0;
+    padding-top: 64px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 44px;
+  }
+  .group__link {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .group__link:hover {
+    text-decoration: none;
+  }
+  .group__link:focus-visible {
+    outline-offset: 8px;
+  }
+
+  .visual {
+    position: relative;
+    display: block;
+    width: calc(var(--box) * var(--px));
+    height: calc(var(--sleeve) * var(--px));
+  }
+  .visual__disc {
+    position: absolute;
+    right: calc(var(--right) * var(--px));
+    top: calc((var(--sleeve) - var(--disc)) / 2 * var(--px));
+    width: calc(var(--disc) * var(--px));
+    height: calc(var(--disc) * var(--px));
+    transition: transform var(--t-lift) var(--ease-lift);
+  }
+  .group__link:hover .visual__disc,
+  .group__link:focus-visible .visual__disc {
+    transform: translateX(24px);
+  }
+  .visual__sleeve {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(var(--sleeve) * var(--px));
+    box-shadow: var(--shadow);
+  }
+
+  .caption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    line-height: 1.2;
+  }
+  .caption__cat {
+    font: 700 24px var(--f-mono);
+  }
+  .caption__co {
+    font: 700 17px/1.2 var(--f-display);
+  }
+  .caption__role {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .caption__yrs {
+    font: 12px var(--f-mono);
+    color: var(--muted);
+  }
+  .group__link:hover .caption__co {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 767px) {
+    .career {
+      --px: min(1px, calc((100vw - 48px) / 356));
+      min-height: 0;
+      padding: 110px var(--gutter) 64px;
+    }
+    .title {
+      font-size: 36px;
+    }
+    .records {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 48px;
+      padding-top: 48px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .visual__disc {
+      transition: none;
+    }
+  }
+</style>

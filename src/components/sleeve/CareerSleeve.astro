@@ -1,0 +1,529 @@
+---
+/**
+ * A career record's front cover. The typography drifts with the cover stage,
+ * from office report to techno (frame 1c):
+ *   0 report line · company + department, small catalog number, full dates, dot
+ *   1 bars        · bold catalog number, short company, years, dot
+ *   2 halftone    · die-cut label, big catalog number, return sticker
+ *   3 radial      · die-cut label, mono catalog number, edition, headline sticker
+ *
+ * All measurements are in design pixels × --u, where --u = sleeve width / the
+ * width the layout was designed at, so a sleeve reads the same at any size.
+ * Stage 3 has its own spec per context; stages 0–2 scale the career-page layout.
+ *
+ * In the crate (variant crate/mobile) the sleeve renders both its spine label
+ * and its front; the crate shows the front only while the record is pulled.
+ *
+ * Decorative (aria-hidden): the page always prints the same facts as text.
+ */
+import CoverArt from '../svg/CoverArt.astro';
+import CenterLabel from '../svg/CenterLabel.astro';
+import Grain from '../Grain.astro';
+import LogoMark from '../LogoMark.astro';
+import { site } from '../../site';
+import { yearsLong, yearsShort, yearStart } from '../../lib/format';
+import { careerLabel, seedOf, type Career } from '../../lib/records';
+
+export type SleeveVariant = 'crate' | 'career' | 'inspect' | 'mobile';
+
+interface Props {
+  record: Career;
+  variant: SleeveVariant;
+  /** Turn the centre label in the die-cut (18 s loop). */
+  spin?: boolean;
+  class?: string;
+}
+
+const { record, variant, spin = false, class: className } = Astro.props;
+const d = record.data;
+const stage = d.coverStage;
+const small = d.size === 'small';
+const dark = stage >= 2;
+const dieCut = stage >= 2;
+const seed = seedOf(d.cat);
+
+// Design width of the layout in use.
+const stage3Base = { crate: 330, career: 260, inspect: 540, mobile: 318 }[variant];
+const base = stage === 3 ? stage3Base : stage === 1 ? 165 : 260;
+
+const spine = variant === 'career' ? (d.size === 'double' ? 8 : d.size === 'large-spine' ? 5 : 0) : 0;
+const inCrate = variant === 'crate' || variant === 'mobile';
+const label = careerLabel(record);
+const sticker = d.sticker;
+const tone = dark ? 'paper' : 'ink';
+---
+
+<div
+  class:list={['sleeve', `sleeve--${variant}`, `sleeve--s${stage}`, `sleeve--${tone}`, small && 'sleeve--small', className]}
+  style={`--base:${base};--spine:${spine}px`}
+  aria-hidden="true">
+  <div class="sleeve__face">
+    <CoverArt stage={stage} series={d.coverSeries} seed={seed} />
+    {
+      dieCut && (
+        <div class="diecut">
+          <div class:list={['diecut__label', spin && 'spin-18']}>
+            <CenterLabel {...label} />
+          </div>
+        </div>
+      )
+    }
+
+    {
+      inCrate && (
+        <div class="sleeve__spine">
+          {variant === 'crate' ? (
+            <span class="spine-v">
+              {d.cat} · {yearStart(d.years)}
+            </span>
+          ) : (
+            <span class="spine-h">{d.cat}</span>
+          )}
+          {variant === 'crate' && sticker?.kind === 'return' && <span class="spine-dot" />}
+        </div>
+      )
+    }
+
+    <div class="sleeve__front">
+      {
+        stage === 0 && (
+          <>
+            <span class="s0-co">
+              {d.company}
+              {d.coverSub && (
+                <>
+                  <br />
+                  <span class="s0-sub">{d.coverSub}</span>
+                </>
+              )}
+            </span>
+            <span class="s0-cat">{d.cat}</span>
+            <span class="s0-yrs">{yearsLong(d.years)}</span>
+            {sticker?.kind === 'dot' && <span class="s0-dot" />}
+          </>
+        )
+      }
+      {
+        stage === 1 && (
+          <>
+            <span class="s1-cat">{d.cat}</span>
+            <span class="s1-co">{d.companyShort ?? d.company}</span>
+            <span class="s1-yrs">{yearsShort(d.years)}</span>
+            {sticker?.kind === 'dot' && <span class="s1-dot" />}
+          </>
+        )
+      }
+      {
+        stage === 2 && (
+          <>
+            <span class="s2-cat">{d.cat}</span>
+            <span class="s2-yrs">{yearsShort(d.years)}</span>
+          </>
+        )
+      }
+      {
+        stage === 3 && (
+          <>
+            {variant === 'inspect' && (
+              <span class="s3-stamp">
+                <LogoMark size={14} border={2} tone="paper" class="s3-stamp__mark" />
+                <span>{site.label}</span>
+              </span>
+            )}
+            {d.edition && <span class="s3-edition">{d.edition}</span>}
+            <span class="s3-bottom">
+              <span class="s3-cat">{d.cat}</span>
+              {variant === 'inspect' && (
+                <span class="s3-line">{[d.company, d.title, yearsShort(d.years)].filter(Boolean).join(' · ')}</span>
+              )}
+            </span>
+          </>
+        )
+      }
+    </div>
+    {dark && <Grain tone="dark" />}
+    {variant === 'inspect' && <span class="sheen" />}
+    {
+      stage === 3 && sticker?.kind === 'headline' && variant !== 'career' && (
+        <span class="front-only s3-headline">
+          <span class="s3-headline__big">{sticker.text}</span>
+          {variant === 'inspect' && sticker.sub && <span class="s3-headline__sub">{sticker.sub}</span>}
+          <Grain tone="ink-white" />
+        </span>
+      )
+    }
+  </div>
+
+  {/* Stickers that overhang the sleeve edge sit outside the clipped face. */}
+  {
+    stage === 3 && sticker?.kind === 'headline' && variant === 'career' && (
+      <span class="s3-headline s3-headline--career">
+        <span class="s3-headline__big">{sticker.text}</span>
+        <Grain tone="ink-white" />
+      </span>
+    )
+  }
+  {
+    sticker?.kind === 'return' && (
+      <span class="front-only return-sticker">
+        {(sticker.text ?? 'Back').split(' ').slice(0, 1).join(' ')}
+        <br />
+        {(sticker.text ?? '').split(' ').slice(1).join(' ')}
+      </span>
+    )
+  }
+</div>
+
+<style>
+  .sleeve {
+    --u: calc(100cqw / var(--base));
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    container-type: inline-size;
+  }
+  .sleeve__face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-right: var(--spine) solid var(--spine-colour, #262422);
+  }
+  .sleeve--ink {
+    color: var(--ink);
+  }
+  .sleeve--paper {
+    color: var(--paper);
+  }
+  .sleeve__front > span,
+  .sleeve__spine > span,
+  .s3-headline,
+  .return-sticker {
+    position: absolute;
+  }
+  .sleeve__front,
+  .sleeve__spine {
+    position: absolute;
+    inset: 0;
+  }
+  .sleeve__spine {
+    display: none;
+  }
+
+  /* Die-cut hole showing the centre label. */
+  .diecut {
+    position: absolute;
+    left: 33%;
+    top: 33%;
+    width: 34%;
+    height: 34%;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+  .diecut::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 calc(2px + var(--diecut-extra, 0px)) rgba(0, 0, 0, 0.5);
+  }
+  .sleeve--inspect .diecut {
+    --diecut-extra: 1px;
+  }
+  .diecut__label {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Shrinkwrap sheen (inspection). */
+  .sheen {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      118deg,
+      rgba(255, 255, 255, 0) 30%,
+      rgba(255, 255, 255, 0.09) 42%,
+      rgba(255, 255, 255, 0) 50%,
+      rgba(255, 255, 255, 0.05) 70%,
+      rgba(255, 255, 255, 0) 78%
+    );
+  }
+
+  /* Spine labels in the crate */
+  .spine-v {
+    left: 14px;
+    top: 14px;
+    writing-mode: vertical-rl;
+    font: 600 12px var(--f-mono);
+    white-space: nowrap;
+  }
+  .sleeve--small .spine-v {
+    left: 12px;
+    top: 12px;
+  }
+  .spine-h {
+    left: 12px;
+    top: 8px;
+    font: 600 11px var(--f-mono);
+  }
+  .sleeve--small .spine-h {
+    left: 10px;
+    top: 6px;
+  }
+  .spine-dot {
+    left: 12px;
+    bottom: 96px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* Stage 0 — office report (designed at 260) */
+  .s0-co {
+    left: calc(30 * var(--u));
+    top: calc(26 * var(--u));
+    font: 600 calc(14 * var(--u)) / 1.3 var(--f-display);
+  }
+  .s0-sub {
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .s0-cat {
+    right: calc(30 * var(--u));
+    top: calc(26 * var(--u));
+    font: calc(10 * var(--u)) var(--f-mono);
+  }
+  .s0-yrs {
+    left: calc(30 * var(--u));
+    bottom: calc(24 * var(--u));
+    font: calc(10 * var(--u)) var(--f-mono);
+    color: var(--muted);
+  }
+  .s0-dot,
+  .s1-dot {
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .s0-dot {
+    right: calc(26 * var(--u));
+    bottom: calc(20 * var(--u));
+    width: calc(22 * var(--u));
+    height: calc(22 * var(--u));
+  }
+
+  /* Stage 1 — bars (designed at 165) */
+  .s1-cat {
+    left: calc(16 * var(--u));
+    top: calc(14 * var(--u));
+    font: 700 calc(10 * var(--u)) var(--f-mono);
+  }
+  .s1-co {
+    right: calc(16 * var(--u));
+    top: calc(14 * var(--u));
+    font: 700 calc(11 * var(--u)) var(--f-display);
+  }
+  .s1-yrs {
+    left: calc(16 * var(--u));
+    bottom: calc(10 * var(--u));
+    font: calc(9 * var(--u)) var(--f-mono);
+  }
+  .s1-dot {
+    right: calc(14 * var(--u));
+    bottom: calc(8 * var(--u));
+    width: calc(18 * var(--u));
+    height: calc(18 * var(--u));
+    transform: rotate(8deg);
+  }
+
+  /* Stage 2 — halftone (designed at 260) */
+  .s2-cat {
+    left: calc(18 * var(--u));
+    bottom: calc(14 * var(--u));
+    font: 800 calc(22 * var(--u)) var(--f-display);
+    font-stretch: 75%;
+  }
+  .s2-yrs {
+    left: calc(18 * var(--u));
+    top: calc(16 * var(--u));
+    font: calc(10 * var(--u)) var(--f-mono);
+  }
+  .return-sticker {
+    left: calc(176 * var(--u));
+    top: calc(-16 * var(--u));
+    width: calc(74 * var(--u));
+    height: calc(74 * var(--u));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--ink);
+    transform: rotate(12deg);
+    font: 800 calc(13 * var(--u)) / 1 var(--f-display);
+    font-stretch: 75%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Stage 3 — radial. One spec per context. */
+  .s3-cat {
+    font-family: var(--f-mono);
+    font-weight: 700;
+    line-height: 1;
+  }
+  .s3-edition {
+    font-family: var(--f-hand);
+    font-weight: 700;
+    line-height: 1;
+    transform: rotate(-6deg);
+  }
+  .s3-bottom {
+    display: flex;
+    flex-direction: column;
+  }
+  .s3-headline {
+    /* The spec'd sticker widths exclude padding. */
+    box-sizing: content-box;
+    display: flex;
+    flex-direction: column;
+    background: var(--accent);
+    color: var(--ink);
+    border-radius: var(--r-sticker);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    transform: rotate(4deg);
+  }
+  .s3-headline__big {
+    position: relative;
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-stretch: 75%;
+    line-height: 1.05;
+  }
+  .s3-headline__sub {
+    position: relative;
+    font: 600 calc(10 * var(--u)) / 1.2 var(--f-mono);
+  }
+
+  /* career (260) */
+  .sleeve--career .s3-bottom {
+    left: calc(16 * var(--u));
+    bottom: calc(12 * var(--u));
+  }
+  .sleeve--career .s3-cat {
+    font-size: calc(24 * var(--u));
+  }
+  .sleeve--career .s3-edition {
+    right: calc(12 * var(--u));
+    top: calc(6 * var(--u));
+    font-size: calc(20 * var(--u));
+  }
+  .s3-headline--career {
+    left: calc(150 * var(--u));
+    top: calc(190 * var(--u));
+    width: calc(104 * var(--u));
+    padding: calc(7 * var(--u)) calc(9 * var(--u));
+    transform: rotate(-4deg);
+  }
+  .s3-headline--career .s3-headline__big {
+    font-size: calc(12 * var(--u));
+  }
+
+  /* crate, pulled (330) */
+  .sleeve--crate .s3-bottom {
+    left: calc(18 * var(--u));
+    bottom: calc(16 * var(--u));
+  }
+  .sleeve--crate .s3-cat {
+    font-size: calc(26 * var(--u));
+  }
+  .sleeve--crate .s3-edition {
+    right: calc(14 * var(--u));
+    top: calc(10 * var(--u));
+    font-size: calc(24 * var(--u));
+  }
+  .sleeve--crate .s3-headline {
+    right: calc(18 * var(--u));
+    bottom: calc(18 * var(--u));
+    width: calc(118 * var(--u));
+    padding: calc(8 * var(--u)) calc(10 * var(--u));
+    box-shadow: none;
+  }
+  .sleeve--crate .s3-headline__big {
+    font-size: calc(13 * var(--u));
+  }
+
+  /* mobile, pulled (318) */
+  .sleeve--mobile .s3-bottom {
+    left: calc(16 * var(--u));
+    bottom: calc(14 * var(--u));
+  }
+  .sleeve--mobile .s3-cat {
+    font-size: calc(24 * var(--u));
+  }
+  .sleeve--mobile .s3-edition {
+    right: calc(14 * var(--u));
+    top: calc(8 * var(--u));
+    font-size: calc(22 * var(--u));
+  }
+  .sleeve--mobile .s3-headline {
+    right: calc(14 * var(--u));
+    bottom: calc(16 * var(--u));
+    width: calc(108 * var(--u));
+    padding: calc(7 * var(--u)) calc(9 * var(--u));
+    box-shadow: none;
+  }
+  .sleeve--mobile .s3-headline__big {
+    font-size: calc(12 * var(--u));
+  }
+
+  /* inspection (540) */
+  .s3-stamp {
+    left: calc(28 * var(--u));
+    top: calc(26 * var(--u));
+    display: flex;
+    align-items: center;
+    gap: calc(8 * var(--u));
+    padding: calc(6 * var(--u)) calc(10 * var(--u));
+    border: calc(2 * var(--u)) solid var(--paper);
+    opacity: 0.8;
+    transform: rotate(-2deg);
+    font: 850 calc(16 * var(--u)) / 1 var(--f-display);
+    font-stretch: 72%;
+  }
+  .s3-stamp :global(.s3-stamp__mark) {
+    --size: calc(14 * var(--u)) !important;
+    --border: calc(2 * var(--u)) !important;
+  }
+  .sleeve--inspect .s3-edition {
+    right: calc(28 * var(--u));
+    top: calc(20 * var(--u));
+    font-size: calc(34 * var(--u));
+  }
+  .sleeve--inspect .s3-bottom {
+    left: calc(28 * var(--u));
+    bottom: calc(24 * var(--u));
+    gap: calc(6 * var(--u));
+  }
+  .sleeve--inspect .s3-cat {
+    font-size: calc(58 * var(--u));
+    line-height: 0.9;
+    text-shadow: 2px 1px 0 rgba(120, 116, 108, 0.6);
+  }
+  .s3-line {
+    font: 600 calc(17 * var(--u)) var(--f-display);
+    font-stretch: 78%;
+  }
+  .sleeve--inspect .s3-headline {
+    right: calc(34 * var(--u));
+    bottom: calc(120 * var(--u));
+    width: calc(196 * var(--u));
+    padding: calc(14 * var(--u)) calc(16 * var(--u));
+    gap: calc(6 * var(--u));
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  }
+  .sleeve--inspect .s3-headline__big {
+    font-size: calc(22 * var(--u));
+    line-height: 1.02;
+  }
+</style>

@@ -1,0 +1,76 @@
+/*
+ * HALVTONE design tokens — values from handoff/README.md "Design Tokens".
+ * The accent is for stickers and chart markers only; text on it is always ink.
+ */
+:root {
+  /* Colour */
+  --ink: #131211;
+  --back-sleeve: #161514;
+  --disc-body: #0e0d0c;
+  --groove: #272523;
+  --spine: #262422;
+  --paper: #ebe6db;
+  --index-paper: #f3f0e9;
+  --cover-paper: #f3f0e8;
+  --insert-paper: #f5f2ea;
+  --white-label: #f7f5f0;
+  --sticker-white: #f8f6f1;
+  --card: #d6cfbf;
+  --card-dark: #c9c1b0;
+  --tab-dark-text: #3a3732;
+  --energy: #c8c1b2;
+  --decoy-1: #e4dfd3;
+  --decoy-2: #ece8de;
+  --muted: #4a4640;
+  --faint: #8a857b;
+  --on-dark-muted: #b7b1a5;
+  --on-dark-soft: #cfc9bd;
+  --misreg: #5f5b55;
+  --rule: rgba(19, 17, 16, 0.15);
+  --rule-row: rgba(19, 17, 16, 0.14);
+  --rule-strong: rgba(19, 17, 16, 0.2);
+  --rule-on-dark: rgba(235, 230, 219, 0.25);
+  --accent: #ea5a2a;
+
+  /* Type */
+  --f-display: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --f-hand: 'Caveat Variable', 'Caveat', cursive;
+  --ghost: 2px 1px 0 rgba(19, 17, 16, 0.16);
+  --ghost-soft: 2px 1px 0 rgba(19, 17, 16, 0.12);
+
+  /* Space */
+  --gutter: 56px;
+  --frame: 1440px;
+
+  /* Radius */
+  --r-sticker: 2px;
+  --r-stamp: 5px;
+  --r-tab: 6px 6px 0 0;
+
+  /* Shadow */
+  --sh-strip: -3px 0 8px rgba(0, 0, 0, 0.22);
+  --sh-sleeve: 2px 3px 8px rgba(0, 0, 0, 0.2);
+  --sh-pulled: -6px 14px 24px rgba(0, 0, 0, 0.35);
+  --sh-lift: -6px 10px 20px rgba(0, 0, 0, 0.3);
+  --sh-pulled-lift: -8px 20px 30px rgba(0, 0, 0, 0.4);
+  --sh-inspect: 4px 8px 22px rgba(0, 0, 0, 0.3);
+  --sh-sticker: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --sh-divider: -1px 0 3px rgba(0, 0, 0, 0.18);
+
+  /* Motion */
+  --ease-lift: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-lift: 260ms;
+}
+
+@supports (color: oklch(0 0 0)) {
+  :root {
+    --accent: oklch(0.66 0.21 36);
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --gutter: 24px;
+  }
+}

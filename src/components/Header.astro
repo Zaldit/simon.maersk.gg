@@ -1,0 +1,106 @@
+---
+import LogoMark from './LogoMark.astro';
+import { site } from '../site';
+
+export interface HeaderLink {
+  href: string;
+  label: string;
+  /** Appended for screen readers, e.g. to explain a catalog-number link. */
+  hint?: string;
+  /** Hidden on phones, where the header keeps one link. */
+  desktopOnly?: boolean;
+}
+interface Props {
+  links: HeaderLink[];
+}
+const { links } = Astro.props;
+---
+
+<header class="site-header">
+  <a class="lockup" href="/">
+    <LogoMark size={20} border={2} class="lockup__mark" />
+    <span class="lockup__word">{site.label}</span>
+    <span class="visually-hidden">, home</span>
+  </a>
+  <nav aria-label="Page">
+    <ul class="links plain-list" role="list">
+      {
+        links.map((link) => (
+          <li class:list={{ 'desktop-only': link.desktopOnly }}>
+            <a href={link.href}>
+              {link.label}
+              {link.hint && <span class="visually-hidden"> ({link.hint})</span>}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</header>
+
+<style>
+  .site-header {
+    position: absolute;
+    z-index: 5;
+    top: 36px;
+    left: var(--gutter);
+    right: var(--gutter);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .lockup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    margin-block: -12px;
+  }
+  .lockup:hover {
+    text-decoration: none;
+  }
+  .lockup__word {
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: 20px;
+    font-stretch: 75%;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+  .links {
+    display: flex;
+    gap: 28px;
+    margin: 0;
+    font-family: var(--f-mono);
+    font-size: 13px;
+  }
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-block: -12px;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 767px) {
+    .site-header {
+      top: 38px;
+    }
+    .desktop-only {
+      display: none;
+    }
+    .lockup {
+      gap: 8px;
+    }
+    .lockup :global(.lockup__mark) {
+      --size: 16px !important;
+    }
+    .lockup__word {
+      font-size: 17px;
+    }
+    .links {
+      gap: 20px;
+    }
+  }
+</style>

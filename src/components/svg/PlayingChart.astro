@@ -1,0 +1,128 @@
+---
+/**
+ * Genre chart (viewBox 0 0 860 270): grey energy bars (26 wide, energy × 21),
+ * a 3px black speed line with r 6 dots, and an accent ring (r 14) on the most
+ * intense track. The speed scale is fixed at 118–154 bpm on every genre.
+ * Tick labels sit at x 848, clear of the last bar (the reference put them at
+ * 830, where the last bar hid them).
+ */
+import { PLAYING_BPM } from '../../lib/music';
+
+export interface PlayingPoint {
+  bpm: number;
+  /** 1–10 */
+  energy: number;
+}
+
+interface Props {
+  tracks: PlayingPoint[];
+  /** Accessible summary; the track list next to the chart carries the data. */
+  summary: string;
+  class?: string;
+}
+
+const { tracks, summary, class: className } = Astro.props;
+
+const r2 = (v: number) => Math.round(v * 100) / 100;
+const n = tracks.length;
+const step = 760 / Math.max(1, n - 1);
+const px = (i: number) => r2(70 + i * step);
+const span = PLAYING_BPM.max - PLAYING_BPM.min;
+const py = (t: number) => r2(232 - ((t - PLAYING_BPM.min) / span) * 212);
+
+const peak = tracks.reduce((best, d, i) => (d.energy > tracks[best]!.energy ? i : best), 0);
+const line = tracks.map((d, i) => `${px(i)},${py(d.bpm)}`).join(' ');
+---
+
+<svg
+  class:list={['playing-chart', className]}
+  viewBox="0 0 860 270"
+  preserveAspectRatio="xMidYMid meet"
+  role="img"
+  aria-label={summary}
+  data-playing-chart>
+  <g aria-hidden="true">
+    {
+      [120, 130, 140, 150].map((t) => (
+        <>
+          <line x1="40" x2="820" y1={py(t)} y2={py(t)} stroke="rgba(19,17,16,.08)" />
+          <text x="848" y={py(t) + 4} font-size="11" fill="#4a4640" class="ff-mono">
+            {t}
+          </text>
+        </>
+      ))
+    }
+    {
+      tracks.map((d, i) => (
+        <>
+          <rect x={px(i) - 13} y={240 - d.energy * 21} width="26" height={d.energy * 21} fill="#c8c1b2" />
+          <text x={px(i)} y="262" text-anchor="middle" font-size="12" fill="#131211" class="ff-mono">
+            {String(i + 1).padStart(2, '0')}
+          </text>
+        </>
+      ))
+    }
+    <line x1="40" x2="820" y1="240" y2="240" stroke="#131211" stroke-width="1"></line>
+    <polyline
+      class="playing-chart__line"
+      points={line}
+      fill="none"
+      stroke="#131211"
+      stroke-width="3"
+      stroke-linejoin="round"
+      pathLength="1"></polyline>
+    <g class="playing-chart__dots">
+      {tracks.map((d, i) => <circle cx={px(i)} cy={py(d.bpm)} r="6" fill="#131211" stroke="#f5f2ea" stroke-width="2" />)}
+    </g>
+    {
+      n > 0 && (
+        <circle
+          class="playing-chart__peak"
+          cx={px(peak)}
+          cy={py(tracks[peak]!.bpm)}
+          r="14"
+          fill="none"
+          stroke-width="3"
+          style="stroke:var(--accent)"
+        />
+      )
+    }
+  </g>
+</svg>
+
+<style>
+  .playing-chart {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  /* Redraw the speed line when a sheet is pulled up (src/scripts/playing.ts). */
+  :global(.is-drawing) .playing-chart__line {
+    stroke-dasharray: 1;
+    animation: line-draw 700ms var(--ease-lift) both;
+  }
+  :global(.is-drawing) .playing-chart__dots,
+  :global(.is-drawing) .playing-chart__peak {
+    animation: line-dots 300ms 450ms ease-out both;
+  }
+  @keyframes line-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes line-dots {
+    from {
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.is-drawing) .playing-chart__line,
+    :global(.is-drawing) .playing-chart__dots,
+    :global(.is-drawing) .playing-chart__peak {
+      animation: none;
+    }
+  }
+</style>

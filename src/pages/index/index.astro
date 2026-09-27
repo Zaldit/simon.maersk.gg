@@ -1,0 +1,241 @@
+---
+/**
+ * /index — everything as a plain, keyboard-first list, plus the pressing
+ * history (frame 1h). No graphics, no metaphor, no JS required.
+ */
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import { yearsShort } from '../../lib/format';
+import { careerHref, experimentHref, genreHref, getRecords, roleLine } from '../../lib/records';
+import { pad2, pressings } from '../../lib/build';
+
+const { career, experiments, playing } = await getRecords();
+---
+
+<Base title="Index" description="Everything on the site, as a list." grain={false} background="#f3f0e9">
+  <div class="page">
+    <Header links={[{ href: '/', label: '← Back to the crate' }]} />
+    <main id="main" class="index">
+      <div class="lists">
+        <div>
+          <h1 class="title">Index</h1>
+          <p class="sub">Everything on the site, as a list.</p>
+        </div>
+
+        <section aria-labelledby="h-career">
+          <h2 class="group" id="h-career">Career</h2>
+          <ul class="plain-list" role="list">
+            {
+              career.map((r) => (
+                <li>
+                  <a class="row row--career" href={careerHref(r)}>
+                    <span class="row__cat" aria-hidden="true">
+                      {r.data.cat}
+                    </span>
+                    <span class="row__co">{r.data.company}</span>
+                    <span>{roleLine(r, ' · ')}</span>
+                    <span class="row__meta">{yearsShort(r.data.years)}</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section aria-labelledby="h-experiments">
+          <h2 class="group" id="h-experiments">Experiments</h2>
+          <ul class="plain-list" role="list">
+            {
+              experiments.map((r) => (
+                <li>
+                  <a class="row" href={experimentHref(r)}>
+                    <span class="row__cat" aria-hidden="true">
+                      {r.data.cat}
+                    </span>
+                    <span>{r.data.headline}</span>
+                    <span class="row__meta">data story</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section aria-labelledby="h-playing">
+          <h2 class="group" id="h-playing">What I'm playing</h2>
+          <ul class="plain-list" role="list">
+            {
+              playing.map((g) => (
+                <li>
+                  <a class="row" href={genreHref(g)}>
+                    <span class="row__cat" aria-hidden="true">
+                      Insert
+                    </span>
+                    <span>
+                      {g.data.title}: {g.data.tracks.length} tracks
+                    </span>
+                    <span class="row__meta">chart</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+      </div>
+
+      <section class="pressings" aria-labelledby="pressing-history">
+        <h2 class="pressings__h" id="pressing-history">Pressing history</h2>
+        <p class="pressings__sub">What changed on the site, newest first.</p>
+        {
+          pressings.length > 0 ? (
+            <ol class="plain-list" role="list">
+              {pressings.map((p) => (
+                <li class="pressing">
+                  <span class="pressing__n">
+                    <span class="visually-hidden">Pressing </span>
+                    {pad2(p.number)}
+                  </span>
+                  <span>{p.description}</span>
+                  <span class="pressing__sha">
+                    <span class="visually-hidden">Commit </span>
+                    {p.sha}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p class="pressings__empty">No pressings yet.</p>
+          )
+        }
+      </section>
+    </main>
+  </div>
+</Base>
+
+<style>
+  .page {
+    position: relative;
+    max-width: var(--frame);
+    margin-inline: auto;
+  }
+  .index {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 80px;
+    align-items: start;
+    padding: 130px var(--gutter) 96px;
+  }
+  .lists {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    font-size: 16px;
+  }
+  .lists section + section {
+    margin-top: -4px;
+  }
+  .title {
+    font: 750 44px/1 var(--f-display);
+    font-stretch: 78%;
+  }
+  .sub {
+    margin-top: 8px;
+    font-size: 16px;
+    line-height: 1.2;
+    color: var(--muted);
+  }
+  .group {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--ink);
+    font: 400 12px var(--f-mono);
+    color: var(--faint);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr) 140px;
+    align-items: baseline;
+    min-height: 44px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--rule-row);
+    line-height: 1.2;
+  }
+  .row--career {
+    grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1fr) 140px;
+  }
+  .row--career > span:nth-child(3) {
+    padding-right: 12px;
+  }
+  .row:hover {
+    text-decoration: none;
+    background: rgba(19, 17, 16, 0.04);
+  }
+  .row:hover > span:nth-child(2) {
+    text-decoration: underline;
+  }
+  .row__cat {
+    font: 14px var(--f-mono);
+  }
+  .row__co {
+    font-weight: 600;
+  }
+  .row__meta {
+    font: 13px var(--f-mono);
+    color: var(--muted);
+  }
+
+  .pressings {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 6px;
+    scroll-margin-top: 24px;
+  }
+  .pressings__h {
+    font: 700 22px var(--f-display);
+    font-stretch: 78%;
+  }
+  .pressings__sub {
+    margin-top: -8px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .pressing {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 4px 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule-row);
+    font: 12.5px/1.45 var(--f-mono);
+  }
+  .pressing__n {
+    font-weight: 700;
+  }
+  .pressing__sha {
+    grid-column: 2;
+    color: var(--faint);
+  }
+  .pressings__empty {
+    font: 12.5px var(--f-mono);
+    color: var(--muted);
+  }
+
+  @media (max-width: 1023px) {
+    .index {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 56px;
+    }
+  }
+  @media (max-width: 767px) {
+    .index {
+      padding-top: 110px;
+    }
+    .row,
+    .row--career {
+      grid-template-columns: 76px minmax(0, 1fr);
+      row-gap: 4px;
+    }
+    .row > span:nth-child(n + 3) {
+      grid-column: 2;
+    }
+  }
+</style>

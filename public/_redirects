@@ -1,0 +1,3 @@
+# Cloudflare Pages treats /index as the root index and redirects it to /.
+# Send it to the plain index page instead.
+/index /index/ 301

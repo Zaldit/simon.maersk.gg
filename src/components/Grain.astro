@@ -1,0 +1,13 @@
+---
+/**
+ * Texture overlay for a positioned parent (README "Texture").
+ * light: photocopy grain on paper · dark: grain on dark surfaces
+ * ink: paper-coloured knockout on stamps · ink-white: speckle on accent stickers
+ */
+interface Props {
+  tone?: 'light' | 'dark' | 'ink' | 'ink-white';
+}
+const { tone = 'light' } = Astro.props;
+---
+
+<span class:list={['tex', `tex--${tone}`]} aria-hidden="true"></span>

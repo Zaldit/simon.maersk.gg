@@ -1,0 +1,240 @@
+---
+/**
+ * The crate, desktop (frame 1b). Records stand side by side, each showing 64px
+ * of the one before; divider cards split the sections; one record is pulled
+ * forward with its caption above it.
+ *
+ * Works without JS: every record is a link to its page. src/scripts/crate.ts
+ * adds pulling, divider jumps, arrow keys and drag.
+ */
+import CareerSleeve from '../sleeve/CareerSleeve.astro';
+import WhiteSleeve from '../sleeve/WhiteSleeve.astro';
+import InsertCard from '../sleeve/InsertCard.astro';
+import Grain from '../Grain.astro';
+import Lip from './Lip.astro';
+import { SECTIONS, type CrateEntry, type Section } from '../../lib/crateItems';
+import { crateMargins, crateOffsets } from '../../lib/crate';
+
+interface Props {
+  entries: CrateEntry[];
+  pulled: number;
+}
+const { entries, pulled } = Astro.props;
+
+type Row = { type: 'divider'; section: Section; label: string; width: number } | { type: 'entry'; entry: CrateEntry; index: number; width: number };
+const row: Row[] = [];
+for (const s of SECTIONS) {
+  const inSection = entries.map((e, index) => ({ e, index })).filter(({ e }) => e.section === s.id);
+  if (inSection.length === 0) continue;
+  row.push({ type: 'divider', section: s.id, label: s.label, width: 240 });
+  for (const { e, index } of inSection) row.push({ type: 'entry', entry: e, index, width: e.width });
+}
+const widths = row.map((r) => r.width);
+const pulledRow = row.findIndex((r) => r.type === 'entry' && r.index === pulled);
+const margins = crateMargins(widths, pulledRow);
+const offsets = crateOffsets(widths, pulledRow);
+const current = entries[pulled]!;
+const ROW_LEFT = 24;
+---
+
+<section class="crate" data-crate aria-labelledby="crate-title" style={`--cap-x:${ROW_LEFT + offsets[pulledRow]!}px`}>
+  <h2 id="crate-title" class="visually-hidden">Records</h2>
+  <p class="crate__caption" data-crate-caption>
+    {current.cat && <span class="cap-cat" data-cap-cat aria-hidden="true">{current.cat}</span>}
+    <span data-cap-text>{current.name} · {current.meta}</span>
+    <a href={current.href} data-cap-open>Open<span class="visually-hidden" data-cap-sr> {current.name}</span><span aria-hidden="true">&nbsp;→</span></a>
+  </p>
+  <ul class="crate__row plain-list" role="list" data-crate-row>
+    {
+      row.map((r, i) =>
+        r.type === 'divider' ? (
+          <li class="crate-divider" data-w={r.width} data-section={r.section} style={`--ml:${margins[i]}px`}>
+            <button type="button" class="crate-divider__tab" data-jump={r.section}>
+              {r.label}
+            </button>
+            <Grain tone="light" />
+          </li>
+        ) : (
+          <li
+            class:list={['crate-item', `crate-item--${r.entry.kind}`, r.entry.kind === 'career' && r.entry.record.data.size === 'small' && 'crate-item--small', i === pulledRow && 'is-pulled']}
+            data-w={r.width}
+            data-entry={r.index}
+            data-section={r.entry.section}
+            data-href={r.entry.href}
+            data-name={r.entry.name}
+            data-meta={r.entry.meta}
+            data-cat={r.entry.cat}
+            style={`--ml:${margins[i]}px;--w:${r.width}px`}>
+            <a class="crate-item__link" href={r.entry.href}>
+              <span class="visually-hidden">{r.entry.label}</span>
+              {r.entry.kind === 'career' && <CareerSleeve record={r.entry.record} variant="crate" spin />}
+              {r.entry.kind === 'experiment' && <WhiteSleeve record={r.entry.record} variant="crate" />}
+              {r.entry.kind === 'insert' && <InsertCard genre={r.entry.genre} />}
+            </a>
+          </li>
+        ),
+      )
+    }
+  </ul>
+  <Lip />
+</section>
+
+<style>
+  .crate {
+    position: absolute;
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: 30px;
+    height: 540px;
+    overflow-x: clip;
+    touch-action: pan-y;
+    user-select: none;
+  }
+  .crate.is-dragging {
+    cursor: grabbing;
+  }
+
+  .crate__caption {
+    position: absolute;
+    z-index: 3;
+    top: 26px;
+    left: var(--cap-x);
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    font: 12px var(--f-mono);
+    white-space: nowrap;
+    transition: left var(--t-lift) var(--ease-lift);
+  }
+  .cap-cat {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .crate__caption a {
+    text-decoration: underline;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-block: -14px;
+  }
+
+  .crate__row {
+    position: absolute;
+    left: 24px;
+    bottom: 40px;
+    margin: 0;
+    display: flex;
+    align-items: flex-end;
+    transform: translateX(var(--shift, 0px));
+    transition: transform 400ms var(--ease-lift);
+  }
+  .crate__row > li {
+    position: relative;
+    flex: none;
+    margin-left: var(--ml);
+    transition:
+      margin-left var(--t-lift) var(--ease-lift),
+      transform var(--t-lift) var(--ease-lift),
+      box-shadow var(--t-lift);
+  }
+
+  /* Divider cards: 42px taller than records so the tabs always clear them. */
+  .crate-divider {
+    width: 240px;
+    height: 372px;
+    background: var(--card);
+    border-radius: 0 3px 0 0;
+    box-shadow: var(--sh-divider);
+  }
+  .crate-divider__tab {
+    position: absolute;
+    top: -34px;
+    left: 10px;
+    height: 36px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    background: var(--card);
+    border-radius: var(--r-tab);
+    font: 700 17px var(--f-display);
+    font-stretch: 80%;
+    white-space: nowrap;
+  }
+  /* 44px hit area around the 36px tab */
+  .crate-divider__tab::before {
+    content: '';
+    position: absolute;
+    inset: -4px -4px -4px;
+  }
+
+  /* Records */
+  .crate-item {
+    width: var(--w);
+    transform-origin: 30% 100%;
+    box-shadow: var(--sh-strip);
+  }
+  .crate-item--experiment {
+    box-shadow: -3px 0 8px rgba(0, 0, 0, 0.2);
+  }
+  .crate-item__link {
+    display: block;
+    cursor: pointer;
+  }
+  .crate-item__link:hover {
+    text-decoration: none;
+  }
+  .crate-item__link:focus-visible {
+    outline-offset: 4px;
+  }
+  .crate-item--insert {
+    transform: rotate(1.5deg);
+    transform-origin: bottom left;
+    box-shadow: -3px 0 8px rgba(0, 0, 0, 0.2);
+  }
+  .crate-item.is-pulled {
+    transform: translateY(-80px);
+    box-shadow: var(--sh-pulled);
+  }
+  .crate-item--insert.is-pulled {
+    transform: translateY(-80px) rotate(-1deg);
+  }
+  @media (hover: hover) {
+    .crate-item:hover {
+      transform: translateY(-18px) rotate(-2.5deg);
+      box-shadow: var(--sh-lift);
+    }
+    .crate-item--insert:hover {
+      transform: rotate(-1deg) translateY(-18px);
+    }
+    .crate-item.is-pulled:hover {
+      transform: translateY(-92px) rotate(-1.5deg);
+      box-shadow: var(--sh-pulled-lift);
+    }
+    .crate.is-dragging .crate-item:hover {
+      transform: none;
+    }
+    .crate.is-dragging .crate-item.is-pulled:hover {
+      transform: translateY(-80px);
+    }
+  }
+
+  /* Spine view unless pulled */
+  .crate-item:not(.is-pulled) :global(.sleeve__front),
+  .crate-item:not(.is-pulled) :global(.front-only) {
+    display: none;
+  }
+  .crate-item:not(.is-pulled) :global(.sleeve__spine) {
+    display: block;
+  }
+  .crate-item:not(.is-pulled) :global(.spin-18) {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .crate__caption,
+    .crate__row,
+    .crate__row > li {
+      transition: none;
+    }
+  }
+</style>

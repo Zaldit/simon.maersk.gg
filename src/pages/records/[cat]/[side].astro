@@ -1,0 +1,382 @@
+---
+/**
+ * /records/[cat]/[side] — record opened (frame 1e). The disc slides out of
+ * the sleeve and turns slowly (24s); its runout etching carries the deploy's
+ * commit hash. Side tabs switch the story (src/scripts/sides.ts); without JS
+ * they are plain links to each side's page. State: record.side.
+ */
+import Base from '../../../layouts/Base.astro';
+import Header from '../../../components/Header.astro';
+import CareerSleeve from '../../../components/sleeve/CareerSleeve.astro';
+import Disc from '../../../components/svg/Disc.astro';
+import { yearsShort } from '../../../lib/format';
+import {
+  careerEtch,
+  careerHref,
+  careerLabel,
+  companyCaption,
+  getRecords,
+  realSides,
+  sideHref,
+  sideShort,
+  sideSpan,
+  sideTitle,
+  slug,
+  type Career,
+  type Side,
+} from '../../../lib/records';
+
+export async function getStaticPaths() {
+  const { career } = await getRecords();
+  return career.flatMap((record) =>
+    realSides(record).map((side) => ({
+      params: { cat: slug(record.data.cat), side: side.side.toLowerCase() },
+      props: { record, side, career },
+    })),
+  );
+}
+
+interface Props {
+  record: Career;
+  side: Side;
+  career: Career[];
+}
+const { record, side, career } = Astro.props;
+const d = record.data;
+const company = companyCaption(record, career);
+const sides = realSides(record);
+const tracksOf = (s: Side) => s.tracks.length || 3;
+---
+
+<Base title={`${sideTitle(side)} — ${company}`} description={side.story[0]}>
+  <div class="page-clip">
+    <div class="page">
+      <Header
+        links={[
+          { href: careerHref(record), label: `← ${d.cat}`, hint: `back to ${company}` },
+          { href: '/index/', label: 'Index' },
+        ]}
+      />
+      <main id="main" class="opened" data-sides data-cat={d.cat} data-etch-base={careerEtch(record, side).replace(/ · side [A-Z] ·$/, '')}>
+        <div class="deck" aria-hidden="true">
+          <div class="deck__sleeve">
+            <CareerSleeve record={record} variant="inspect" />
+          </div>
+          <div class="deck__disc">
+            <Disc label={careerLabel(record, side)} trackCount={tracksOf(side)} etch={careerEtch(record, side)} spin={24} />
+          </div>
+        </div>
+
+        <div class="content">
+          <nav class="tabs" aria-label="Sides" data-tablist>
+            {
+              d.sides.map((s) =>
+                s.status === 'empty' ? (
+                  <span class="tab tab--empty" aria-hidden="true">
+                    <b>{s.side}</b>
+                  </span>
+                ) : (
+                  <a
+                    class:list={['tab', s === side && 'is-active']}
+                    href={sideHref(record, s.side)}
+                    aria-current={s === side ? 'page' : undefined}
+                    data-tab={s.side}
+                    data-count={`${d.sides.indexOf(s) + 1}/${d.sides.length}`}
+                    data-tracks={tracksOf(s)}>
+                    <b aria-hidden="true">{s.side}</b>
+                    {sideShort(s)}
+                    {s.status === 'in-progress' && (
+                      <>
+                        <span class="tab__dot" aria-hidden="true" />
+                        <span class="visually-hidden">(in progress)</span>
+                      </>
+                    )}
+                  </a>
+                ),
+              )
+            }
+          </nav>
+
+          {
+            sides.map((s) => (
+              <section class="panel" id={`side-${s.side.toLowerCase()}`} data-panel={s.side} hidden={s !== side}>
+                <div class="head">
+                  <p class="meta">
+                    <span aria-hidden="true">{d.cat} · Side {s.side} · </span>
+                    {d.company} · {s.status === 'in-progress' ? 'in progress' : yearsShort(sideSpan(record, s))}
+                  </p>
+                  <h1 class="title">{sideTitle(s)}</h1>
+                </div>
+
+                {s.story.length > 0 && (
+                  <div class="block">
+                    <h2 class="block__h">The story</h2>
+                    {s.story.map((p) => (
+                      <p class="prose">{p}</p>
+                    ))}
+                  </div>
+                )}
+
+                {s.outcome && (
+                  <div class="outcome">
+                    <p class="outcome__value">{s.outcome.value}</p>
+                    <p class="outcome__caption">{s.outcome.caption}</p>
+                  </div>
+                )}
+
+                {s.tracks.length > 0 && (
+                  <>
+                    <h2 class="visually-hidden">Projects</h2>
+                    <ul class="tracks plain-list" role="list">
+                      {s.tracks.map((t) => (
+                        <li>
+                          <span class="tracks__id" aria-hidden="true">
+                            {t.id}
+                          </span>
+                          <span>{t.title}</span>
+                          <span class="tracks__feat">{t.feat.length > 0 && `feat. ${t.feat.join(', ')}`}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {s.whyMovedOn && (
+                  <div class="block block--tight">
+                    <h2 class="block__h">Why I moved on</h2>
+                    <p class="prose">{s.whyMovedOn}</p>
+                  </div>
+                )}
+              </section>
+            ))
+          }
+        </div>
+      </main>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import '../../../scripts/sides.ts';
+</script>
+
+<style>
+  .page-clip {
+    overflow-x: clip;
+  }
+  .page {
+    position: relative;
+    max-width: var(--frame);
+    margin-inline: auto;
+  }
+  .opened {
+    --px: 1px;
+    display: grid;
+    grid-template-columns: 700px minmax(0, 684px);
+    padding: 120px var(--gutter) 80px 0;
+    min-height: max(100svh, 900px);
+  }
+
+  /* Sleeve cropped off the left edge; the disc slides out of it and turns. */
+  .deck {
+    position: relative;
+    height: calc(610 * var(--px));
+  }
+  .deck__sleeve {
+    position: absolute;
+    left: calc(-360 * var(--px));
+    top: calc(60 * var(--px));
+    width: calc(540 * var(--px));
+    box-shadow: var(--sh-inspect);
+  }
+  .deck__sleeve :global(.front-only),
+  .deck__sleeve :global(.sleeve__front),
+  .deck__sleeve :global(.diecut),
+  .deck__sleeve :global(.sheen) {
+    display: none;
+  }
+  .deck__disc {
+    position: absolute;
+    left: calc(40 * var(--px));
+    top: calc(50 * var(--px));
+    width: calc(560 * var(--px));
+    height: calc(560 * var(--px));
+    filter: drop-shadow(4px 10px 18px rgba(0, 0, 0, 0.3));
+    animation: disc-out 1100ms var(--ease-lift) both;
+  }
+  @keyframes disc-out {
+    from {
+      transform: translateX(calc(-300 * var(--px)));
+    }
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+  }
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .panel[hidden] {
+    display: none;
+  }
+  .panel.is-entering {
+    animation: panel-in 300ms var(--ease-lift);
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font: 13px var(--f-display);
+  }
+  .tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    line-height: 16px;
+    background: var(--card);
+  }
+  /* 44px hit area around the 34px tab */
+  .tab::before {
+    content: '';
+    position: absolute;
+    inset: -5px 0;
+  }
+  .tab:hover {
+    text-decoration: none;
+    background: var(--card-dark);
+  }
+  .tab.is-active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .tab.is-active:focus-visible {
+    outline-color: var(--ink);
+  }
+  .tab__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .tab--empty {
+    background: transparent;
+    color: var(--faint);
+    border: 1px dashed var(--on-dark-muted);
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .meta {
+    font: 12px var(--f-mono);
+    color: var(--muted);
+  }
+  .title {
+    font: 750 56px/0.95 var(--f-display);
+    font-stretch: 76%;
+    letter-spacing: -0.01em;
+  }
+  .block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .block--tight {
+    gap: 8px;
+  }
+  .block__h {
+    font: 700 15px/1.3 var(--f-display);
+  }
+  .prose {
+    font-size: 17px;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  .outcome {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 18px 0;
+    border-top: 1px solid var(--rule-strong);
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .outcome__value {
+    flex: none;
+    font: 800 46px/1 var(--f-display);
+    font-stretch: 75%;
+  }
+  .outcome__caption {
+    max-width: 300px;
+    font: 12px/1.5 var(--f-mono);
+    color: var(--muted);
+  }
+
+  .tracks {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    gap: 8px 12px;
+    margin: 0;
+    font: 13px/1.3 var(--f-mono);
+  }
+  .tracks li {
+    display: contents;
+  }
+  .tracks__id {
+    color: var(--faint);
+  }
+  .tracks__feat {
+    color: var(--muted);
+  }
+
+  @media (max-width: 1279px) {
+    .opened {
+      --px: min(1px, calc(100vw / 820));
+      grid-template-columns: minmax(0, 1fr);
+      padding: 100px var(--gutter) 64px;
+      min-height: 0;
+    }
+    .deck {
+      margin-left: calc(-1 * var(--gutter));
+    }
+  }
+  @media (max-width: 767px) {
+    .title {
+      font-size: 40px;
+    }
+    .outcome {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .tracks {
+      grid-template-columns: 34px 1fr;
+    }
+    .tracks__feat {
+      grid-column: 2;
+      margin-top: -6px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .deck__disc,
+    .panel.is-entering {
+      animation: none;
+    }
+  }
+</style>

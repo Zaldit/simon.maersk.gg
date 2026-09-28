@@ -9,7 +9,7 @@ import Header from '../components/Header.astro';
 import CareerSleeve from '../components/sleeve/CareerSleeve.astro';
 import Disc from '../components/svg/Disc.astro';
 import { yearsShort, yearStart } from '../lib/format';
-import { careerHref, careerLabel, companyCaption, getRecords, realSides, roleLine } from '../lib/records';
+import { careerHref, careerLabel, companyCaption, getRecords, realSides, roleLine, sleeveName } from '../lib/records';
 
 const { career } = await getRecords();
 
@@ -58,7 +58,7 @@ const groups = career.map((r, i) => {
                       <Disc label={d.label} trackCount={d.tracks} />
                     </span>
                   ))}
-                  <span class="visual__sleeve">
+                  <span class="visual__sleeve" style={`view-transition-name:${sleeveName(r.data.cat)}`}>
                     <CareerSleeve record={r} variant="career" />
                   </span>
                 </span>

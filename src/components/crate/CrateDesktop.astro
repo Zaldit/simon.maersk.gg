@@ -14,6 +14,7 @@ import Grain from '../Grain.astro';
 import Lip from './Lip.astro';
 import { SECTIONS, type CrateEntry, type Section } from '../../lib/crateItems';
 import { crateMargins, crateOffsets } from '../../lib/crate';
+import { sleeveName } from '../../lib/records';
 
 interface Props {
   entries: CrateEntry[];
@@ -37,7 +38,7 @@ const current = entries[pulled]!;
 const ROW_LEFT = 24;
 ---
 
-<section class="crate" data-crate aria-labelledby="crate-title" style={`--cap-x:${ROW_LEFT + offsets[pulledRow]!}px`}>
+<section class="crate" data-crate aria-labelledby="crate-title" style={`--cap-x:${ROW_LEFT + offsets[pulledRow]!}px;--n:${row.length};--p:${pulledRow}`}>
   <h2 id="crate-title" class="visually-hidden">Records</h2>
   <p class="crate__caption" data-crate-caption>
     {current.cat && <span class="cap-cat" data-cap-cat aria-hidden="true">{current.cat}</span>}
@@ -48,7 +49,7 @@ const ROW_LEFT = 24;
     {
       row.map((r, i) =>
         r.type === 'divider' ? (
-          <li class="crate-divider" data-w={r.width} data-section={r.section} style={`--ml:${margins[i]}px`}>
+          <li class="crate-divider" data-w={r.width} data-section={r.section} style={`--ml:${margins[i]}px;--i:${i}`}>
             <button type="button" class="crate-divider__tab" data-jump={r.section}>
               {r.label}
             </button>
@@ -64,7 +65,7 @@ const ROW_LEFT = 24;
             data-name={r.entry.name}
             data-meta={r.entry.meta}
             data-cat={r.entry.cat}
-            style={`--ml:${margins[i]}px;--w:${r.width}px`}>
+            style={`--ml:${margins[i]}px;--w:${r.width}px;--i:${i}${r.entry.cat ? `;--vt:${sleeveName(r.entry.cat)}` : ''}`}>
             <a class="crate-item__link" href={r.entry.href}>
               <span class="visually-hidden">{r.entry.label}</span>
               {r.entry.kind === 'career' && <CareerSleeve record={r.entry.record} variant="crate" spin />}
@@ -194,6 +195,8 @@ const ROW_LEFT = 24;
   .crate-item.is-pulled {
     transform: translateY(-80px);
     box-shadow: var(--sh-pulled);
+    /* Only the pulled record carries over to its page. */
+    view-transition-name: var(--vt, none);
   }
   .crate-item--insert.is-pulled {
     transform: translateY(-80px) rotate(-1deg);
@@ -228,6 +231,88 @@ const ROW_LEFT = 24;
   }
   .crate-item:not(.is-pulled) :global(.spin-18) {
     animation-play-state: paused;
+  }
+
+  /*
+   * First visit of the session (html.crate-intro, set in pages/index.astro;
+   * crate.ts ends it early on any input):
+   *   1. drop    every card drops into the crate, left to right
+   *   2. riffle  the records up to the pulled one tip forward in turn, like a
+   *              thumb flicking through; the pulled record lifts highest
+   *   3. land    its sticker is slapped on, its centre label spins up, and the
+   *              caption appears
+   * --i is the card's place in the row, --n the row length, --p the pulled
+   * record's place. Keyframes without an end state land on the card's own
+   * resting transform, so pulled and tilted cards come to rest correctly.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.crate-intro) .crate {
+      --t-riffle: calc(var(--n) * 45ms + 480ms);
+      --t-land: calc(var(--t-riffle) + var(--p) * 70ms + 420ms);
+    }
+    :global(html.crate-intro) .crate__row > li {
+      animation: crate-drop 560ms var(--ease-lift) backwards;
+      animation-delay: calc(var(--i) * 45ms + 120ms);
+    }
+    :global(html.crate-intro) .crate__row > .crate-item:has(~ .is-pulled),
+    :global(html.crate-intro) .crate__row > .crate-item.is-pulled {
+      animation-name: crate-drop, crate-riffle;
+      animation-duration: 560ms, 380ms;
+      animation-timing-function: var(--ease-lift), ease-in-out;
+      animation-fill-mode: backwards, none;
+      animation-delay:
+        calc(var(--i) * 45ms + 120ms),
+        calc(var(--t-riffle) + var(--i) * 70ms);
+    }
+    :global(html.crate-intro) .crate__row > .crate-item--insert:has(~ .is-pulled) {
+      animation-name: crate-drop, crate-riffle-insert;
+    }
+    :global(html.crate-intro) .crate__row > .crate-item.is-pulled {
+      animation-name: crate-drop, crate-riffle-pulled;
+      animation-duration: 560ms, 420ms;
+    }
+    :global(html.crate-intro) .is-pulled :global(.diecut) {
+      animation: slm-spinup 1600ms cubic-bezier(0.45, 0, 0.25, 1) var(--t-land) backwards;
+    }
+    :global(html.crate-intro) .is-pulled :global(.s3-headline),
+    :global(html.crate-intro) .is-pulled :global(.return-sticker),
+    :global(html.crate-intro) .is-pulled :global(.exp-sticker) {
+      animation: slm-slap 480ms var(--t-land) backwards;
+    }
+    :global(html.crate-intro) .crate__caption {
+      animation: crate-caption 300ms ease-out var(--t-land) backwards;
+    }
+  }
+  @keyframes crate-riffle {
+    45% {
+      transform: translateY(-18px) rotate(-2.5deg);
+      box-shadow: var(--sh-lift);
+    }
+  }
+  @keyframes crate-riffle-insert {
+    45% {
+      transform: rotate(-1deg) translateY(-18px);
+    }
+  }
+  @keyframes crate-riffle-pulled {
+    45% {
+      transform: translateY(-104px) rotate(-2deg);
+      box-shadow: var(--sh-pulled-lift);
+    }
+  }
+  @keyframes crate-drop {
+    from {
+      transform: translateY(-150px);
+      opacity: 0;
+    }
+    35% {
+      opacity: 1;
+    }
+  }
+  @keyframes crate-caption {
+    from {
+      opacity: 0;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

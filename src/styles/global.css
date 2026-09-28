@@ -155,6 +155,25 @@ a:hover {
   opacity: 0.45;
 }
 
+/*
+ * Page transitions (cross-document view transitions, no JS). Pages cross-fade;
+ * a record's sleeve carries over between pages that name it the same
+ * (sleeveName() in src/lib/records.ts). Browsers without support, and reduced
+ * motion, navigate normally.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+::view-transition-group(*) {
+  animation-duration: 440ms;
+  animation-timing-function: var(--ease-lift);
+}
+::view-transition-group(root) {
+  animation-duration: 280ms;
+}
+
 /* Slow loops only: 18s / 24s / 30s. Never strobe. */
 @keyframes slm-spin {
   to {
@@ -170,6 +189,50 @@ a:hover {
 .spin-18 { --spin: 18s; }
 .spin-24 { --spin: 24s; }
 .spin-30 { --spin: 30s; }
+
+/*
+ * Crate intro, final beat (see CrateDesktop / CrateMobile): the pulled
+ * record's centre label comes up to speed and its sticker is slapped on.
+ *
+ * Spin-up: goes on the die-cut around the label, so it adds one extra turn on
+ * top of the label's own 18s loop without touching it: whips up, then eases
+ * back to exactly the loop's speed (the curve ends flat).
+ */
+@keyframes slm-spinup {
+  from {
+    rotate: -360deg;
+  }
+  to {
+    rotate: 0deg;
+  }
+}
+/* Slap: individual scale/rotate compose with each sticker's own crooked transform. */
+@keyframes slm-slap {
+  from {
+    opacity: 0;
+    scale: 1.7;
+    rotate: -14deg;
+    filter: drop-shadow(0 14px 10px rgba(0, 0, 0, 0.35));
+    animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.5);
+  }
+  55% {
+    opacity: 1;
+    scale: 0.94;
+    rotate: 2deg;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+    animation-timing-function: ease-out;
+  }
+  78% {
+    scale: 1.03;
+    rotate: -0.5deg;
+    animation-timing-function: ease-in-out;
+  }
+  to {
+    scale: 1;
+    rotate: 0deg;
+    filter: none;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .spin-18,

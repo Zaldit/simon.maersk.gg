@@ -10,7 +10,7 @@ import Header from '../../components/Header.astro';
 import WhiteSleeve from '../../components/sleeve/WhiteSleeve.astro';
 import Disc from '../../components/svg/Disc.astro';
 import ScatterChart from '../../components/svg/ScatterChart.astro';
-import { experimentEtch, experimentLabel, getRecords, slug, type Experiment } from '../../lib/records';
+import { experimentEtch, experimentLabel, getRecords, sleeveName, slug, type Experiment } from '../../lib/records';
 
 export async function getStaticPaths() {
   const { experiments } = await getRecords();
@@ -33,7 +33,7 @@ const { Content } = await render(record);
         <div class="deck__disc">
           <Disc label={experimentLabel(record)} trackCount={2} etch={experimentEtch()} spin={30} />
         </div>
-        <div class="deck__sleeve">
+        <div class="deck__sleeve" style={`view-transition-name:${sleeveName(d.cat)}`}>
           <WhiteSleeve record={record} variant="page" />
         </div>
       </div>

@@ -28,6 +28,12 @@ export async function getRecords() {
 
 /** "SLM-004" → "slm-004" */
 export const slug = (cat: string) => cat.toLowerCase();
+/**
+ * A record's view-transition name, "SLM-004" → "sleeve-slm-004". Every page
+ * that shows the record's sleeve as its hero uses it, so navigating between
+ * them carries the sleeve across instead of cross-fading.
+ */
+export const sleeveName = (cat: string) => `sleeve-${slug(cat)}`;
 /** "01-hard-techno" → "hard-techno" */
 export const genreSlug = (id: string) => id.replace(/^\d+-/, '');
 

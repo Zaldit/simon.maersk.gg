@@ -180,16 +180,21 @@ const tracksOf = (s: Side) => s.tracks.length || 3;
     min-height: max(100svh, 900px);
   }
 
-  /* Sleeve cropped off the left edge; the disc slides out of it and turns. */
+  /*
+   * Sleeve cropped off the left edge; the disc slides out of it and turns.
+   * The sleeve is a real LP's ~4% wider than the 560 disc (the handoff had
+   * it at 540, smaller than the disc), centred on it, with its opening kept
+   * at x 180 so sides.ts's swap still clears it at +25% and hides it at -75%.
+   */
   .deck {
     position: relative;
     height: calc(610 * var(--px));
   }
   .deck__sleeve {
     position: absolute;
-    left: calc(-360 * var(--px));
-    top: calc(60 * var(--px));
-    width: calc(540 * var(--px));
+    left: calc(-402 * var(--px));
+    top: calc(39 * var(--px));
+    width: calc(582 * var(--px));
     box-shadow: var(--sh-inspect);
     z-index: 1;
   }

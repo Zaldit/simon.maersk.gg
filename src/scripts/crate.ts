@@ -243,6 +243,26 @@ function initMobile(root: HTMLElement) {
   stack.addEventListener('pointercancel', () => (start = null));
 }
 
+// ---------------------------------------------------------------- intro
+
+/**
+ * End the first-visit intro (html.crate-intro) once it has played, or at once
+ * on any input so it never gets in the way. Dropping the class also keeps a
+ * later pull from replaying the sequence on the newly pulled record.
+ */
+function endIntroWhenDone() {
+  const html = document.documentElement;
+  if (!html.classList.contains('crate-intro')) return;
+  const end = () => html.classList.remove('crate-intro');
+  const finite = document
+    .getAnimations()
+    .filter((a) => a instanceof CSSAnimation && a.effect?.getComputedTiming().endTime !== Infinity);
+  Promise.all(finite.map((a) => a.finished)).then(end, () => {});
+  for (const type of ['pointerdown', 'keydown', 'touchstart']) {
+    addEventListener(type, end, { once: true, capture: true, passive: true });
+  }
+}
+
 // ---------------------------------------------------------------- boot
 
 const desktop = document.querySelector<HTMLElement>('[data-crate]');
@@ -252,3 +272,4 @@ entryCount = mobile?.querySelectorAll('.mitem').length ?? desktop?.querySelector
 if (desktop) initDesktop(desktop);
 if (mobile) initMobile(mobile);
 store.set(initial ? Number(initial.dataset.entry) : 0);
+endIntroWhenDone();

@@ -14,6 +14,17 @@ const pulled = defaultPulled(entries);
 ---
 
 <Base>
+  <script is:inline>
+    // The crate's drop-in plays once per session, before first paint, and not
+    // when a page transition is already carrying a record back into the crate.
+    try {
+      if (!sessionStorage.getItem('slm-crate-intro')) {
+        sessionStorage.setItem('slm-crate-intro', '1');
+        document.documentElement.classList.add('crate-intro');
+        addEventListener('pagereveal', (e) => e.viewTransition && document.documentElement.classList.remove('crate-intro'), { once: true });
+      }
+    } catch {}
+  </script>
   <div class="crate-page">
     <div class="frame">
       <Header links={[{ href: '/index/', label: 'Index' }, { href: '/index/#pressing-history', label: 'Pressing history', desktopOnly: true }]} />

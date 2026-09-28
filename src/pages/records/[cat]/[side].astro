@@ -2,8 +2,9 @@
 /**
  * /records/[cat]/[side] — record opened (frame 1e). The disc slides out of
  * the sleeve and turns slowly (24s); its runout etching carries the deploy's
- * commit hash. Side tabs switch the story (src/scripts/sides.ts); without JS
- * they are plain links to each side's page. State: record.side.
+ * commit hash. Side tabs switch the story (src/scripts/sides.ts) and turn the
+ * disc over, or swap in the other disc of a double; without JS they are plain
+ * links to each side's page. State: record.side.
  */
 import Base from '../../../layouts/Base.astro';
 import Header from '../../../components/Header.astro';
@@ -21,6 +22,7 @@ import {
   sideShort,
   sideSpan,
   sideTitle,
+  sleeveName,
   slug,
   type Career,
   type Side,
@@ -59,10 +61,10 @@ const tracksOf = (s: Side) => s.tracks.length || 3;
       />
       <main id="main" class="opened" data-sides data-cat={d.cat} data-etch-base={careerEtch(record, side).replace(/ · side [A-Z] ·$/, '')}>
         <div class="deck" aria-hidden="true">
-          <div class="deck__sleeve">
+          <div class="deck__sleeve" style={`view-transition-name:${sleeveName(d.cat)}`}>
             <CareerSleeve record={record} variant="inspect" />
           </div>
-          <div class="deck__disc">
+          <div class="deck__disc" data-deck-disc>
             <Disc label={careerLabel(record, side)} trackCount={tracksOf(side)} etch={careerEtch(record, side)} spin={24} />
           </div>
         </div>
@@ -82,6 +84,7 @@ const tracksOf = (s: Side) => s.tracks.length || 3;
                     aria-current={s === side ? 'page' : undefined}
                     data-tab={s.side}
                     data-count={`${d.sides.indexOf(s) + 1}/${d.sides.length}`}
+                    data-disc={Math.floor(d.sides.indexOf(s) / 2)}
                     data-tracks={tracksOf(s)}>
                     <b aria-hidden="true">{s.side}</b>
                     {sideShort(s)}
@@ -188,6 +191,7 @@ const tracksOf = (s: Side) => s.tracks.length || 3;
     top: calc(60 * var(--px));
     width: calc(540 * var(--px));
     box-shadow: var(--sh-inspect);
+    z-index: 1;
   }
   .deck__sleeve :global(.front-only),
   .deck__sleeve :global(.sleeve__front),
@@ -203,6 +207,11 @@ const tracksOf = (s: Side) => s.tracks.length || 3;
     height: calc(560 * var(--px));
     filter: drop-shadow(4px 10px 18px rgba(0, 0, 0, 0.3));
     animation: disc-out 1100ms var(--ease-lift) both;
+    z-index: 2;
+  }
+  /* Mid-swap (sides.ts): the disc passes behind the sleeve's front. */
+  .deck__disc.is-in-sleeve {
+    z-index: 0;
   }
   @keyframes disc-out {
     from {

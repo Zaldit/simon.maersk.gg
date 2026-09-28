@@ -56,6 +56,8 @@ const { links } = Astro.props;
     gap: 10px;
     min-height: 44px;
     margin-block: -12px;
+    /* Holds still across page transitions. */
+    view-transition-name: lockup;
   }
   .lockup:hover {
     text-decoration: none;

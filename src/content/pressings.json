@@ -3,5 +3,10 @@
     "number": 1,
     "description": "First pressing: HLV-001 to HLV-004.",
     "sha": "5c6d448"
+  },
+  {
+    "number": 2,
+    "description": "Second pressing: page transitions, crate intro and side flips.",
+    "sha": "956612a"
   }
 ]

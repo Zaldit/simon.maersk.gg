@@ -51,9 +51,9 @@ Order, starting with the side that already has the most real structure:
 - [ ] SLM-004 Side A: BI Developer
 - [ ] SLM-004 Side C: Senior Full Stack Engineer (no "Why I moved on")
 - [ ] SLM-004 summary line (currently "Three roles at one company, 2023 – now.")
-- [ ] SLM-003: Business Intelligence Analyst + summary line
-- [ ] SLM-001: Interim Supply Chain Controller + summary line
-- [ ] SLM-002: Tender & Contract Assistant + summary line
+- [x] SLM-003: Business Intelligence Analyst + summary line
+- [x] SLM-001: Interim Supply Chain Controller + summary line
+- [x] SLM-002: Tender & Contract Assistant + summary line
 - [x] Headline sticker on SLM-004: "From dashboards to full stack."
 
 ## Phase 3: Data you can export

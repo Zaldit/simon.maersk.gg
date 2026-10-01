@@ -1,5 +1,6 @@
 ---
 import LogoMark from './LogoMark.astro';
+import Sticker from './Sticker.astro';
 import { site } from '../site';
 
 export interface HeaderLink {
@@ -17,11 +18,17 @@ const { links } = Astro.props;
 ---
 
 <header class="site-header">
-  <a class="lockup" href="/">
-    <LogoMark size={20} border={2} class="lockup__mark" />
-    <span class="lockup__word">{site.label}</span>
-    <span class="visually-hidden">, home</span>
-  </a>
+  <div class="brand">
+    <a class="lockup" href="/">
+      <LogoMark size={20} border={2} class="lockup__mark" />
+      <span class="lockup__word">{site.label}</span>
+      <span class="visually-hidden">, home</span>
+    </a>
+    <!-- The site is still being built: a test pressing, not the release. -->
+    <Sticker kind="progress" rotate={-3} small="10px" class="test-pressing">
+      Test pressing<span class="visually-hidden">: this site is still under development</span>
+    </Sticker>
+  </div>
   <nav aria-label="Page">
     <ul class="links plain-list" role="list">
       {
@@ -49,6 +56,18 @@ const { links } = Astro.props;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand :global(.test-pressing) {
+    padding: 3px 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    view-transition-name: test-pressing;
   }
   .lockup {
     display: flex;
@@ -100,6 +119,21 @@ const { links } = Astro.props;
     }
     .lockup__word {
       font-size: 17px;
+    }
+    .brand {
+      gap: 10px;
+    }
+    .brand :global(.test-pressing) {
+      --small: 9px !important;
+      padding: 2px 6px;
+    }
+  }
+  /* Too narrow for the tape beside the wordmark: stick it underneath. */
+  @media (max-width: 389px) {
+    .brand {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
     }
     .links {
       gap: 20px;
